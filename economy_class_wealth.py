@@ -21,23 +21,35 @@ class Economy():
        Wealth is defined as the physical and financial assets someone holds
        and is distinct from the income or the consumption of a person."""
        
-    def __init__(self, economy_wealth_size, population_size, growth_rate):
+    def __init__(self, economy_wealth_size, population_size, growth_rate, b_begin):
         
         ### set economy (global) attributes
         self.num_agents = population_size
         self.economy_wealth = economy_wealth_size
         self.growth_rate_economy = growth_rate
-        self.increments = 10
+        #### the number of increments is important since it determines how the new
+        #### wealth growth is divided and how many chances there are to receive some. 
+        self.increments = 100
+        
+        ### SET OTHER MODEL PARAMETERS
+        ### track time in the economy 
+        self.time = 0    
+        
+        ### The sum_power is a model parameter which helps calculate the 
+        ### normalized wealth share of
+        ### an agent given the agent parameter beta. Initialized as the usual 
+        ### sum of wealth
+        self.sum_power = economy_wealth_size
+        self.economy_beta = b_begin
+        
         ### set economy agents
         self.agents = self.make_agents()
         
-        ### set other model parameters
-        self.time = 0       
         
     def make_agents(self):
         agents = list()
         for i in range(self.num_agents):
-            agents.append(WealthAgent(i, self.economy_wealth / self.num_agents, self))
+            agents.append(WealthAgent(i, self.economy_wealth / self.num_agents, self, self.economy_beta))
         return agents
 
     def grow(self):     
@@ -52,7 +64,14 @@ class Economy():
             weights.append(x.wealth_share)
         return random.choices(self.agents, weights, k = 1)
     
-        
+    
+    def sum_of_agent_power(self):
+        sum_powers = 0
+        for x in self.agents: 
+           sum_powers += x.wealth**x.beta
+        self.sum_power = sum_powers
+    
+    
     def distribute_wealth(self):
         for increment in range(self.increments):
             agent_j = self.choose_agent()[0]

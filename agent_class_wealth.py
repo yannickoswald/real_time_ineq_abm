@@ -11,7 +11,7 @@ class WealthAgent():
     
     '''initialization values for agent parameters'''
 
-    def __init__(self, unique_id, wealth_begin, economy):
+    def __init__(self, unique_id, wealth_begin, economy, wealth_power):
         
        '''
        Initialise Agent class
@@ -23,6 +23,11 @@ class WealthAgent():
          - wealth                 The wealth (in $) that an agent owns 
          - wealth-share           The wealth-share out of the total economy for
                                   for each agent
+         - wealth-power           β (beta) is an exponent that determines whether the wealth share
+                                  vs. probability to receive more wealth is a concave 
+                                  or convex relationship 
+                                  (concave = saturating, convex = escalating). When 
+                                  β = 1, then relationship is just proportional.
                          
                                
        DESCRIPTION
@@ -33,11 +38,18 @@ class WealthAgent():
        self.economy = economy
        self.wealth = wealth_begin
        self.wealth_share = self.wealth / self.economy.economy_wealth
+       self.wealth_share_power = self.wealth / self.economy.economy_wealth
+       self.beta = wealth_power
        
     
     def determine_wealth_share(self):
+       ### actual wealth share
        self.wealth_share = self.wealth / self.economy.economy_wealth
-    
+       ### the power that the wealth-share provides so to speak in order to gain new wealth
+       ### is a function of beta
+       self.wealth_share_power = (self.wealth**self.beta) / self.economy.sum_power
+       
+       
     def __repr__(self):
         return f"{self.__class__.__name__}('ID: {self.unique_id}')('wealth: {self.wealth}')"
         
