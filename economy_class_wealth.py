@@ -26,7 +26,7 @@ class Economy():
         ### set economy (global) attributes
         self.num_agents = population_size
         self.economy_wealth = economy_wealth_size
-        self.growth_rate_economy = growth_rate
+        self.growth_rate_economy = growth_rate / 365 ### DAILY growth rate
         #### the number of increments is important since it determines how the new
         #### wealth growth is divided and how many chances there are to receive some. 
         self.increments = 100
@@ -40,6 +40,7 @@ class Economy():
         ### an agent given the agent parameter beta. Initialized as the usual 
         ### sum of wealth
         self.sum_power = economy_wealth_size
+        ### beta is a global determinant of the agent parameter beta
         self.economy_beta = b_begin
         
         ### set economy agents
@@ -49,23 +50,38 @@ class Economy():
     def make_agents(self):
         agents = list()
         for i in range(self.num_agents):
-            agents.append(WealthAgent(i, self.economy_wealth / self.num_agents, self, self.economy_beta))
+            agents.append(WealthAgent(i, self.economy_wealth / self.num_agents,
+                                      self, self.economy_beta))
         return agents
 
     def grow(self):     
+        
+        ''' This method represents economic growth. One time step represents
+            one day.'''
+
         self.time = self.time + 1
         self.help_var = self.economy_wealth
         self.economy_wealth = self.economy_wealth * (1 + self.growth_rate_economy)
         self.new_wealth = self.economy_wealth - self.help_var
           
     def choose_agent(self):
+        
+        ''' This method chooses an agent based on its wealth share subject to 
+            the parameter beta which is the exponent/power '''
+        
         weights = []
         for x in self.agents: 
-            weights.append(x.wealth_share)
+            weights.append(x.wealth_share_power)
         return random.choices(self.agents, weights, k = 1)
     
     
     def sum_of_agent_power(self):
+        
+        ''' This method computes the sum of all agent wealth but subject to "power"-parameter
+        beta which then overall gives a different sum than the normal wealth. This is 
+        important so that the wealth_share_power (i.e. the wealth_share with exponent beta)
+        is correctly normalized on the interval [0,1] '''
+        
         sum_powers = 0
         for x in self.agents: 
            sum_powers += x.wealth**x.beta
@@ -73,10 +89,15 @@ class Economy():
     
     
     def distribute_wealth(self):
+        
+        ''' This method chooses an agent each around and distributes all wealth, in n-rounds, 
+        where n is the number of wealth-increments (an arbitrary number that has to be chosen
+         but we usually set equal to the number of agents, so that there are as
+         many chances to get new wealth as as there are agents).'''
+        
         for increment in range(self.increments):
             agent_j = self.choose_agent()[0]
             agent_j.wealth = agent_j.wealth + (self.new_wealth / self.increments)
-            
             
     def recalculate_wealth_shares(self):
         for x in self.agents: 

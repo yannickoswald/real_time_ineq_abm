@@ -16,10 +16,8 @@ import matplotlib.pyplot as plt
 from economy_class_wealth import Economy
 from inequality_metrics import find_wealth_groups
 
-
-
+#### implement progress bars ####
 #%%
-
 
 economy = Economy(10000, 100, 0.01, 1)
 ### one-time procedure
@@ -29,7 +27,7 @@ economy.make_agents()
 plt.hist([x.wealth for x in economy.agents])
 plt.show()
 data = []
-time_horizon = 1000
+time_horizon = 100000
 for i in range(time_horizon):
     economy.sum_of_agent_power()
     economy.grow()
