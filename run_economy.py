@@ -19,15 +19,17 @@ from inequality_metrics import find_wealth_groups
 #### implement progress bars ####
 #%%
 
-economy = Economy(10000, 100, 0.01, 1)
+economy = Economy(10000, 100, 0.025, 1)
 ### one-time procedure
 economy.make_agents()
-
+list_agents = economy.agents
 
 plt.hist([x.wealth for x in economy.agents])
 plt.show()
+
+
 data = []
-time_horizon = 100000
+time_horizon = 1000
 for i in range(time_horizon):
     economy.sum_of_agent_power()
     economy.grow()
@@ -50,6 +52,3 @@ plt.legend()
 plt.show()
     
 plt.hist([x.wealth for x in economy.agents])
-
-list_agents = economy.agents
-

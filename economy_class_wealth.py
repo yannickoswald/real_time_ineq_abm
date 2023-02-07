@@ -18,15 +18,16 @@ from agent_class_wealth import WealthAgent
 class Economy():
     
     """A model of the wealth distribution in the economy. 
-       Wealth is defined as the physical and financial assets someone holds
-       and is distinct from the income or the consumption of a person."""
+       Wealth is defined as the physical and financial assets someone
+       (or society as a whole) holds and is distinct from the income 
+       or the consumption of a person."""
        
     def __init__(self, economy_wealth_size, population_size, growth_rate, b_begin):
         
         ### set economy (global) attributes
         self.num_agents = population_size
         self.economy_wealth = economy_wealth_size
-        self.growth_rate_economy = growth_rate / 365 ### DAILY growth rate
+        self.growth_rate_economy = (1+growth_rate)**(1/365) - 1## ~growth_rate / 365 ### DAILY growth rate
         #### the number of increments is important since it determines how the new
         #### wealth growth is divided and how many chances there are to receive some. 
         self.increments = 100
@@ -40,7 +41,9 @@ class Economy():
         ### an agent given the agent parameter beta. Initialized as the usual 
         ### sum of wealth
         self.sum_power = economy_wealth_size
-        ### beta is a global determinant of the agent parameter beta
+        ### Beta is an economy wide 
+        ### scaling parameter of how power to receive more wealth scales with 
+        ### wealth itself.
         self.economy_beta = b_begin
         
         ### set economy agents
@@ -50,6 +53,11 @@ class Economy():
     def make_agents(self):
         agents = list()
         for i in range(self.num_agents):
+            ### The agent parameters are: i = unique_id, economy_wealth / num_agents =
+            ### every agent receives the same of wealth, self = the economy is passed as 
+            ### a parameter to the agents, economy_beta = This is a economy wide 
+            ### scaling parameter of how power to receive more wealth scales with 
+            ### wealth itself.
             agents.append(WealthAgent(i, self.economy_wealth / self.num_agents,
                                       self, self.economy_beta))
         return agents
