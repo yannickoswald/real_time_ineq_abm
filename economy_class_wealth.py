@@ -12,6 +12,7 @@ import numpy as np
 import random
 os.chdir(".")
 from agent_class_wealth import WealthAgent
+from scipy.stats import powerlognorm
 
 #%%
 
@@ -22,11 +23,16 @@ class Economy():
        (or society as a whole) holds and is distinct from the income 
        or the consumption of a person."""
        
-    def __init__(self, economy_wealth_size, population_size, growth_rate, b_begin):
+    def __init__(self, 
+                 economy_wealth_size,
+                 population_size,
+                 growth_rate,
+                 b_begin,
+                 distribution: str):
         
         ### set economy (global) attributes
         self.num_agents = population_size
-        self.economy_wealth = economy_wealth_size
+        
         self.growth_rate_economy = (1+growth_rate)**(1/365) - 1## ~growth_rate / 365 ### DAILY growth rate
         #### the number of increments is important since it determines how the new
         #### wealth growth is divided and how many chances there are to receive some. 
@@ -46,8 +52,23 @@ class Economy():
         ### wealth itself.
         self.economy_beta = b_begin
         
+        
+        ### set distribution from which agents' wealth is sampled initially
+        if distribution == "all_equal":
+            self.economy_wealth = economy_wealth_size
+            self.distr = self.economy_wealth / self.num_agents
+        elif distribution == "Pareto_lognormal":
+            ### the scaling_coefficient is determined through the actual wealth average
+            ### in USD which is ~ 4.1*10^5 and the average/mean of the standardized
+            ### pareto lognormal distr which then still has to be scaled to match
+            ### the empirical distribution
+            scaling_coefficient = 410000 /5.26
+            self.distr =  powerlognorm.rvs(1.05, 1.9, size=1)*scaling_coefficient
+        
         ### set economy agents
         self.agents = self.make_agents()
+        
+     
         
         
     def make_agents(self):
@@ -58,7 +79,7 @@ class Economy():
             ### a parameter to the agents, economy_beta = This is a economy wide 
             ### scaling parameter of how power to receive more wealth scales with 
             ### wealth itself.
-            agents.append(WealthAgent(i, self.economy_wealth / self.num_agents,
+            agents.append(WealthAgent(i, self.distr,
                                       self, self.economy_beta))
         return agents
 

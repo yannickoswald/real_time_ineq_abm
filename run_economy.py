@@ -19,7 +19,7 @@ from inequality_metrics import find_wealth_groups
 #### implement progress bars ####
 #%%
 
-economy = Economy(100000, 100, 0.025, 1)
+economy = Economy(100000, 100, 0.025, 1, "all_equal")
 ### one-time procedure
 economy.make_agents()
 list_agents = economy.agents

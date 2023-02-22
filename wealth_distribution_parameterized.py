@@ -7,7 +7,7 @@ Created on Tue Feb  7 13:59:25 2023
 import os
 os.chdir(".")
 
-#os.chdir("C:/Users/earyo/Dropbox/Arbeit/postdoc_leeds/real_time_ineq_abm")
+os.chdir("C:/Users/earyo/Dropbox/Arbeit/postdoc_leeds/real_time_ineq_abm")
 from inequality_metrics import find_wealth_groups2
 import numpy as np
 from scipy.stats import powerlognorm
@@ -69,10 +69,12 @@ def optimal_fit_PLN(c_range, s_range, sample_size, empirical_distr):
     
     for i in range(len(c_range)):
         for j in range(len(s_range)):
-            
             ####sample from distrbution
+
             r = powerlognorm.rvs(c_range[i], s_range[j], size=sample_size)
-            ### find wealth groups
+            ### find wealth groups using the find wealth groups2 fct which
+            ### returns a nested list where the second element, so idx = 1, is 
+            ### the wealth shares in percent
             w = find_wealth_groups2(r, sum(r))[1]
             ### express wealth groups in percentage terms
             z = [x*100 for x in w]
@@ -101,22 +103,22 @@ def heatmap2d(arr, xticks, yticks):
 ### plot wealth groups as barchart against each other
 
 sampled_distr = PLN_normalized(1.05, 1.9, 10000)
-modelled_sample_groups_PLN_percent, raw_sample, mean = sampled_distr[0], sampled_distr[1], sampled_distr[2]
+groups_modelled, raw_sample, mean = sampled_distr[0], sampled_distr[1], sampled_distr[2]
 
-plot_wealth_groups(empirical_wealth_shares, modelled_sample_groups_PLN_percent)
+plot_wealth_groups(empirical_wealth_shares, groups_modelled)
 #%% 
 
 ### minimize based on absolute distance 
 #### define parameter range 
-c_range = np.around(np.linspace(0.1, 2, 100),2)
-s_range = np.around(np.linspace(0.5, 2.5, 100),2)
+c_range_data = np.around(np.linspace(0.1, 2, 100),2)
+s_range_data = np.around(np.linspace(0.5, 2.5, 100),2)
 
 #result_range_fct2 = np.zeros((100,100))
 
-results = optimal_fit_PLN(c_range, s_range, 10000, empirical_wealth_shares)
+results = optimal_fit_PLN(c_range_data, s_range_data, 1000, empirical_wealth_shares)
 
-c_range_ticks = list(c_range)[::10]
-s_range_ticks = list(s_range)[::10]
+c_range_ticks = list(c_range_data)[::10]
+s_range_ticks = list(s_range_data)[::10]
 
 heatmap2d(results, c_range_ticks, s_range_ticks)
      
