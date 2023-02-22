@@ -30,7 +30,7 @@ class Economy():
         self.growth_rate_economy = (1+growth_rate)**(1/365) - 1## ~growth_rate / 365 ### DAILY growth rate
         #### the number of increments is important since it determines how the new
         #### wealth growth is divided and how many chances there are to receive some. 
-        self.increments = 100
+        self.increments = 10
         
         ### SET OTHER MODEL PARAMETERS
         ### track time in the economy 

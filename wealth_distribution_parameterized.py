@@ -4,44 +4,119 @@ Created on Tue Feb  7 13:59:25 2023
 
 @author: earyo
 """
+import os
+os.chdir(".")
 
-#%%
-
-### This script will fit a power log-normal distribution to wealth data in the USA 
-
-# Distribution taken from
-## https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.powerlognorm.html#scipy.stats.powerlognorm
-
-
+#os.chdir("C:/Users/earyo/Dropbox/Arbeit/postdoc_leeds/real_time_ineq_abm")
+from inequality_metrics import find_wealth_groups2
 import numpy as np
 from scipy.stats import powerlognorm
 import matplotlib.pyplot as plt
-fig, ax = plt.subplots(1, 1)
+import seaborn as sns 
+#%%
 
-loc = 100000
-scale = 100000
+### WEALTH GROUPS SHARE 01/2019 realtime-inequality.org
+##https://realtimeinequality.org/
+### empirical wealth shares in the UNITED STATES in January 2019 for the
+### top 1%, top10%, next40% and bottom 50% of wealth owners
+''' read some basic data'''
 
-c, s = 1.1, 0.446
-mean, var, skew, kurt = powerlognorm.stats(c, s, loc, scale, moments='mvsk')
+empirical_wealth_shares = [34.8, 70.9, 28.8, 0.2]
+#january 2019 average wealth per adult in $
+average_US_wealth_per_adult = 410400
+###
+###https://math.stackexchange.com/questions/2445496/weighted-sum-of-two-distributions
+
+#%%
+def PLN_normalized(c, s, sample_size):
+    
+    ''' samples the vector r from a powerlognorm distributuion and outputs the 
+    top1%, top10%, next 40%, bottom 50%'''  
+    ### This functions fits a power log-normal distribution to wealth data in the USA 
+    ### Distribution and initial code taken from
+    ### https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.powerlognorm.html#scipy.stats.powerlognorm
+    mean, var, skew, kurt = powerlognorm.stats(c, s, moments='mvsk')
+    r = powerlognorm.rvs(c, s, size=sample_size)
+    w = find_wealth_groups2(r, sum(r))[1]
+    w_percent = [x*100 for x in w]
+    return w_percent, r, mean
 
 
-x = np.linspace(powerlognorm.ppf(0.01, c, s, loc, scale),
-                powerlognorm.ppf(0.99, c, s, loc, scale), 100)
-ax.plot(x, powerlognorm.pdf(x, c, s, loc, scale),
-       'r-', lw=5, alpha=0.6, label='powerlognorm pdf')
+def plot_wealth_groups(bars1, bars2):
+    
+    ### plot wealth groups as barchart against each other  
+    labels = ['top1%', 'top10%', 'next40%', 'bottom50%']
+    x = np.arange(len(labels))  # the label locations
+    width = 0.35  # the width of the bars
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width/2, bars1, width, label='empirical')
+    rects2 = ax.bar(x + width/2, bars2, width, label='PLN-model')
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('% of wealth in the USA')
+    ax.set_xticks(x, labels)
+    ax.legend()
+    ax.bar_label(rects1, padding=3)
+    ax.bar_label(rects2, padding=3)
+    fig.tight_layout()
+    plt.show()
+    
+    
+def optimal_fit_PLN(c_range, s_range, sample_size, empirical_distr):
+
+    ## define local variables 
+    q = empirical_distr
+    result_range = np.zeros((100,100))
+    
+    for i in range(len(c_range)):
+        for j in range(len(s_range)):
+            
+            ####sample from distrbution
+            r = powerlognorm.rvs(c_range[i], s_range[j], size=sample_size)
+            ### find wealth groups
+            w = find_wealth_groups2(r, sum(r))[1]
+            ### express wealth groups in percentage terms
+            z = [x*100 for x in w]
+            
+            minimization_fct = sum([abs(z[x] - q[x]) for x in range(0, 4)])
+            
+            result_range[i,j] = minimization_fct
+            
+    return result_range
+
+    
+##https://stackoverflow.com/questions/33282368/plotting-a-2d-heatmap
+def heatmap2d(arr, xticks, yticks):
+        plt.imshow(arr, cmap='viridis')
+        plt.colorbar()
+        plt.xlabel("parameter c")
+        plt.ylabel("parameter s")
+        plt.xticks(np.linspace(0,99,10), xticks, rotation = "vertical")  # Set label locations.
+        plt.yticks(np.linspace(0,99,10), yticks)  # Set label locations.
+        
+        plt.show()
 
 
-rv = powerlognorm(c, s, loc, scale)
-ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
 
+#%%
+### plot wealth groups as barchart against each other
 
-vals = powerlognorm.ppf([0.001, 0.5, 0.999], c, s, loc, scale)
-np.allclose([0.001, 0.5, 0.999], powerlognorm.cdf(vals, c, s, loc, scale))
+sampled_distr = PLN_normalized(1.05, 1.9, 10000)
+modelled_sample_groups_PLN_percent, raw_sample, mean = sampled_distr[0], sampled_distr[1], sampled_distr[2]
 
-r = powerlognorm.rvs(c, s, loc, scale, size=1000)
+plot_wealth_groups(empirical_wealth_shares, modelled_sample_groups_PLN_percent)
+#%% 
 
+### minimize based on absolute distance 
+#### define parameter range 
+c_range = np.around(np.linspace(0.1, 2, 100),2)
+s_range = np.around(np.linspace(0.5, 2.5, 100),2)
 
-ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
-ax.set_xlim([x[0], x[-1]])
-ax.legend(loc='best', frameon=False)
-plt.show()
+#result_range_fct2 = np.zeros((100,100))
+
+results = optimal_fit_PLN(c_range, s_range, 10000, empirical_wealth_shares)
+
+c_range_ticks = list(c_range)[::10]
+s_range_ticks = list(s_range)[::10]
+
+heatmap2d(results, c_range_ticks, s_range_ticks)
+     
