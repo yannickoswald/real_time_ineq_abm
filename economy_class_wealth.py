@@ -24,63 +24,67 @@ class Economy():
        or the consumption of a person."""
        
     def __init__(self, 
-                 economy_wealth_size,
                  population_size,
                  growth_rate,
                  b_begin,
-                 distribution: str):
+                 distribution: str
+                 ):
         
         ### set economy (global) attributes
-        self.num_agents = population_size
-        
+        self.num_agents = population_size  
         self.growth_rate_economy = (1+growth_rate)**(1/365) - 1## ~growth_rate / 365 ### DAILY growth rate
         #### the number of increments is important since it determines how the new
         #### wealth growth is divided and how many chances there are to receive some. 
         self.increments = 10
-        
         ### SET OTHER MODEL PARAMETERS
         ### track time in the economy 
         self.time = 0    
-        
-        ### The sum_power is a model parameter which helps calculate the 
-        ### normalized wealth share of
-        ### an agent given the agent parameter beta. Initialized as the usual 
-        ### sum of wealth
-        self.sum_power = economy_wealth_size
         ### Beta is an economy wide 
         ### scaling parameter of how power to receive more wealth scales with 
         ### wealth itself.
         self.economy_beta = b_begin
-        
-        
-        ### set distribution from which agents' wealth is sampled initially
-        if distribution == "all_equal":
-            self.economy_wealth = economy_wealth_size
-            self.distr = self.economy_wealth / self.num_agents
-        elif distribution == "Pareto_lognormal":
-            ### the scaling_coefficient is determined through the actual wealth average
-            ### in USD which is ~ 4.1*10^5 and the average/mean of the standardized
-            ### pareto lognormal distr which then still has to be scaled to match
-            ### the empirical distribution
-            scaling_coefficient = 410000 /5.26
-            self.distr =  powerlognorm.rvs(1.05, 1.9, size=1)*scaling_coefficient
-        
+        ### distribution type in the economy that 
+        ### determines the initial distribution of wealth
+        self.distr = distribution
         ### set economy agents
         self.agents = self.make_agents()
-        
-     
-        
+        ### compute total economy wealth bottom up from the level of agents
+        self.economy_wealth = self.total_wealth_init()
+        ### The sum_power is a model parameter which helps calculate the 
+        ### normalized wealth share of
+        ### an agent given the agent parameter beta. Initialized as the usual 
+        ### sum of wealth
+        self.sum_power = self.total_wealth_init()
+    
+    def total_wealth_init(self):
+        ### computes total wealth in the economy bottom up from agents
+        ### only used during initialization though, as afterwards a global
+        ### growth rate applies to the total wealth of the economy which is then 
+        ### distributed "top down" to the agents
+        sum_wealth = 0
+        for x in self.agents: 
+           sum_wealth += x.wealth
+        return sum_wealth
         
     def make_agents(self):
         agents = list()
         for i in range(self.num_agents):
-            ### The agent parameters are: i = unique_id, economy_wealth / num_agents =
-            ### every agent receives the same of wealth, self = the economy is passed as 
+            ### The agent parameters are: i = unique_id, self.distr, self = the economy is passed as 
             ### a parameter to the agents, economy_beta = This is a economy wide 
             ### scaling parameter of how power to receive more wealth scales with 
             ### wealth itself.
-            agents.append(WealthAgent(i, self.distr,
-                                      self, self.economy_beta))
+            ### set distribution from which agents' wealth is sampled initially
+            if self.distr == "all_equal":
+                a_wealth = 10000
+            elif self.distr == "Pareto_lognormal":
+                ### the scaling_coefficient is determined through the actual wealth average
+                ### in USD which is ~ 4.1*10^5 and the average/mean of the standardized
+                ### pareto lognormal distr which then still has to be scaled to match
+                ### the empirical distribution
+                scaling_coefficient = 410000/5.26
+                a_wealth = powerlognorm.rvs(1.05, 1.9, size=1)*scaling_coefficient
+            ## create agent
+            agents.append(WealthAgent(i, a_wealth, self, self.economy_beta))
         return agents
 
     def grow(self):     
@@ -106,7 +110,7 @@ class Economy():
     
     def sum_of_agent_power(self):
         
-        ''' This method computes the sum of all agent wealth but subject to "power"-parameter
+        ''' This method computes the sum of all agent wealth but subject to a "power"-parameter
         beta which then overall gives a different sum than the normal wealth. This is 
         important so that the wealth_share_power (i.e. the wealth_share with exponent beta)
         is correctly normalized on the interval [0,1] '''

@@ -19,12 +19,13 @@ from inequality_metrics import find_wealth_groups
 #### implement progress bars ####
 #%%
 
-economy = Economy(100000, 100, 0.025, 1, "all_equal")
+economy = Economy(1000, 0.025, 1, "Pareto_lognormal")
 ### one-time procedure
 economy.make_agents()
 list_agents = economy.agents
 
-plt.hist([x.wealth for x in economy.agents])
+array_agent_wealth = np.asarray([x.wealth for x in economy.agents])
+plt.hist(array_agent_wealth, bins = 100)
 plt.show()
 
 

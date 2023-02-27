@@ -43,8 +43,8 @@ class WealthAgent():
        self.unique_id = unique_id
        self.economy = economy
        self.wealth = wealth_begin
-       self.wealth_share = self.wealth / self.economy.economy_wealth
-       self.wealth_share_power = self.wealth / self.economy.economy_wealth
+       self.wealth_share = 1#self.wealth / self.economy.economy_wealth
+       self.wealth_share_power = 1#self.wealth / self.economy.economy_wealth
        self.beta = wealth_exponent
        
     
