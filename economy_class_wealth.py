@@ -32,7 +32,7 @@ class Economy():
         
         ### set economy (global) attributes
         self.num_agents = population_size  
-        self.growth_rate_economy = (1+growth_rate)**(1/365) - 1## ~growth_rate / 365 ### DAILY growth rate
+        self.growth_rate_economy = (1+growth_rate)**(1/12) - 1## ~growth_rate / 12 ### MONTHLY growth rate
         #### the number of increments is important since it determines how the new
         #### wealth growth is divided and how many chances there are to receive some. 
         self.increments = 10
@@ -82,7 +82,7 @@ class Economy():
                 ### pareto lognormal distr which then still has to be scaled to match
                 ### the empirical distribution
                 scaling_coefficient = 410000/5.26
-                a_wealth = powerlognorm.rvs(1.05, 1.9, size=1)*scaling_coefficient
+                a_wealth = powerlognorm.rvs(0.33, 1.15, size=1)*scaling_coefficient
             ## create agent
             agents.append(WealthAgent(i, a_wealth, self, self.economy_beta))
         return agents

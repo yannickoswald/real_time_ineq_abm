@@ -30,7 +30,7 @@ plt.show()
 
 
 data = []
-time_horizon = 10000
+time_horizon = 100
 for i in range(time_horizon):
     economy.sum_of_agent_power()
     economy.grow()
