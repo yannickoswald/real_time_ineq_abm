@@ -15,6 +15,7 @@ import numpy as np
 from scipy.stats import powerlognorm
 import matplotlib.pyplot as plt
 import seaborn as sns 
+from tqdm import tqdm
 #%%
 ### WEALTH GROUPS SHARE 01/2019 realtime-inequality.org
 ''' read some basic data'''
@@ -66,7 +67,7 @@ def optimal_fit_PLN(c_range, s_range, sample_size, empirical_distr):
     ## define local variables 
     q = empirical_distr
     result_range = np.zeros((len(c_range),len(s_range)))
-    for i in range(len(c_range)):
+    for i in tqdm(range(len(c_range))):
         for j in range(len(s_range)):
             ####sample from distrbution
             r = powerlognorm.rvs(c_range[i], s_range[j], size=sample_size)
@@ -101,14 +102,15 @@ def heatmap2d(arr, xticks, yticks):
 #### define parameter range  that is to be searched over for an optimum/min.
 c_range_data = np.around(np.linspace(0.1, 2, 100),2)
 s_range_data = np.around(np.linspace(0.5, 2.5, 100),2)
+sample_size = 10**5
 #%% RUN ERROR MINIMIZATION for 2019 (January)
 ### plot wealth groups as barchart against each other
-sampled_distr = PLN_normalized(0.33, 1.15, 100000)
+sampled_distr = PLN_normalized(0.33, 1.15, sample_size)
 groups_modelled, raw_sample, mean = sampled_distr[0], sampled_distr[1], sampled_distr[2]
 plot_wealth_groups(empirical_wealth_shares, groups_modelled)
 ### minimize based on absolute distance 
 #result_range_fct2 = np.zeros((100,100))
-results = optimal_fit_PLN(c_range_data, s_range_data, 100000, empirical_wealth_shares)
+results = optimal_fit_PLN(c_range_data, s_range_data, sample_size, empirical_wealth_shares)
 results[np.where(c_range_data==1.04) , np.where(s_range_data==1.95)]
 #np.where(results == np.min(results))
 #results[np.where(results == np.min(results))[0][0], np.where(results == np.min(results))[1][0]]
@@ -116,15 +118,14 @@ optimal_c = c_range_data[np.where(results == np.min(results))[0][0]]
 optimal_s = s_range_data[np.where(results == np.min(results))[1][0]]
 c_range_ticks = list(c_range_data)[::10]
 s_range_ticks = list(s_range_data)[::10]
-
 heatmap2d(results, c_range_ticks, s_range_ticks)
 
 #%% RUN ERROR MINIMIZATION for 1990 January
 
 
-results_1990 = optimal_fit_PLN(c_range_data, s_range_data, 100000, empirical_wealth_shares_1990)
+results_1990 = optimal_fit_PLN(c_range_data, s_range_data, sample_size, empirical_wealth_shares_1990)
 results_1990[np.where(c_range_data==1.04) , np.where(s_range_data==1.95)]
 #np.where(results == np.min(results))
 #results[np.where(results == np.min(results))[0][0], np.where(results == np.min(results))[1][0]]
 optimal_c_1990 = c_range_data[np.where(results_1990 == np.min(results_1990))[0][0]]   
-optimal_s_1990 = s_range_data[np.where(results_1990 == np.min(results))[1][0]]
+optimal_s_1990 = s_range_data[np.where(results_1990 == np.min(results_1990))[1][0]]
