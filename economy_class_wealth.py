@@ -27,10 +27,12 @@ class Economy():
                  population_size,
                  growth_rate,
                  b_begin,
-                 distribution: str
+                 distribution: str,
+                 start_year
                  ):
         
         ### set economy (global) attributes
+        self.start_year = start_year
         self.num_agents = population_size  
         self.growth_rate_economy = (1+growth_rate)**(1/12) - 1## ~growth_rate / 12 ### MONTHLY growth rate
         #### the number of increments is important since it determines how the new
@@ -67,6 +69,10 @@ class Economy():
         return sum_wealth
         
     def make_agents(self):
+        ''' method makes agents dependent on:
+            (i) the initial distribution of wealth which is either all equal or
+                Paretolognormal
+            (ii) the year that the model starts'''
         agents = list()
         for i in range(self.num_agents):
             ### The agent parameters are: i = unique_id, self.distr, self = the economy is passed as 
@@ -81,8 +87,12 @@ class Economy():
                 ### in USD which is ~ 4.1*10^5 and the average/mean of the standardized
                 ### pareto lognormal distr which then still has to be scaled to match
                 ### the empirical distribution
-                scaling_coefficient = 410000/5.26
-                a_wealth = powerlognorm.rvs(0.33, 1.15, size=1)*scaling_coefficient
+                if self.start_year == 2019:
+                    scale_coeff =  410400/5.26
+                    a_wealth = powerlognorm.rvs(0.33, 1.15, size=1)*scale_coeff
+                elif self.start_year == 1990:
+                    scale_coefft = 203900/5.26
+                    a_wealth = powerlognorm.rvs(1.05, 1.6, size=1)*scale_coeff
             ## create agent
             agents.append(WealthAgent(i, a_wealth, self, self.economy_beta))
         return agents

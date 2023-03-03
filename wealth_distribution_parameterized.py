@@ -26,8 +26,8 @@ empirical_wealth_shares = [34.8, 70.9, 28.8, 0.2]
 #january 2019 average wealth per adult in $
 average_US_wealth_per_adult = 410400
 '''1990'''
-### 1990 data is important so we can validate the model with fitting it to the data
-### from 1990 to 2019
+### 1990 data is important so we can validate the model by 
+### fitting it to the data from 1990 to 2019
 ####empirical wealth_shares for january 1990 [28.6, 64.7, 33.4, 1.8]
 empirical_wealth_shares_1990 = [28.6, 64.7, 33.4, 1.8]
 #january 1990 average wealth per adult in $
@@ -121,8 +121,6 @@ s_range_ticks = list(s_range_data)[::10]
 heatmap2d(results, c_range_ticks, s_range_ticks)
 
 #%% RUN ERROR MINIMIZATION for 1990 January
-
-
 results_1990 = optimal_fit_PLN(c_range_data, s_range_data, sample_size, empirical_wealth_shares_1990)
 results_1990[np.where(c_range_data==1.04) , np.where(s_range_data==1.95)]
 #np.where(results == np.min(results))

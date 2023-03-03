@@ -15,11 +15,31 @@ os.chdir(".")
 import matplotlib.pyplot as plt
 from economy_class_wealth import Economy
 from inequality_metrics import find_wealth_groups
-
 #### implement progress bars ####
 #%%
+### LOAD empirical monthly wealth Data
+with open('./data/wealth_data_for_import.csv') as f:
+    data = pd.read_csv(f, encoding = 'unicode_escape')
+#%%    
+### PLOT empirical monthly wealth Data
+wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
+fig, ax = plt.subplots()
 
-economy = Economy(1000, 0.025, 1, "Pareto_lognormal")
+for g in wealth_groups: 
+
+    x = data["date_short"][data["group"] == g].reset_index(drop = True)
+    y = data["real_wealth_share"][data["group"] == g].reset_index(drop = True)
+    
+    ax.plot(x,y, label = g)
+
+ax.set_xticks(x.iloc[0::50].index)
+ax.set_xticklabels(x.iloc[0::50], rotation = 90)
+ax.legend(frameon = False)
+ax.set_ylim((-0.05, 1))
+ax.margins(0)
+#%%
+
+economy = Economy(1000, 0.025, 1, "Pareto_lognormal", 1990)
 ### one-time procedure
 economy.make_agents()
 list_agents = economy.agents
