@@ -91,7 +91,7 @@ class Economy():
                     scale_coeff =  410400/5.26
                     a_wealth = powerlognorm.rvs(0.33, 1.15, size=1)*scale_coeff
                 elif self.start_year == 1990:
-                    scale_coefft = 203900/5.26
+                    scale_coeff = 203900/5.26
                     a_wealth = powerlognorm.rvs(1.05, 1.6, size=1)*scale_coeff
             ## create agent
             agents.append(WealthAgent(i, a_wealth, self, self.economy_beta))
