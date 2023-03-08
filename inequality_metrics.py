@@ -33,7 +33,7 @@ def find_wealth_groups(agents_list, total_wealth):
     ### LISTS of WEALTH GROUPS
     top1 = agents_list[:agents_per_top1]
     top10 = agents_list[:agents_per_top10]
-    next40 = agents_list[agents_per_top30:len(agents_list)-agents_per_top30]
+    next40 = agents_list[agents_per_top10:len(agents_list)-agents_per_bottom50]
     bottom50 = agents_list[agents_per_bottom50:]
     
     ### LOOP OVER ALL LISTS of WEALTH GROUPS AND SUM WEALTH OF AGENTS
