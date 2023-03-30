@@ -145,6 +145,20 @@ class Economy():
     def recalculate_wealth_shares(self):
         for x in self.agents: 
             x.determine_wealth_share()
+            
+            
+    def determine_agent_trajectories(self):
+        for x in self.agents: 
+            x.det_wealth_trajectory()
+    
+    def state_vec_data(self):
+        ## two rows because we have w = wealth and wealth change rate as critical variables
+        sv_data = np.zeros((self.num_agents, 2))   
+        for count, x in enumerate(self.agents): 
+            sv_data[count,0] = x.wealth
+            sv_data[count,1] = x.g_rate
+        return sv_data
+        
      
     def __repr__(self):
         return f"{self.__class__.__name__}('population size: {self.num_agents}'),('economy size: {self.economy_wealth}')"

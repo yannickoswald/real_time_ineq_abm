@@ -43,11 +43,21 @@ class WealthAgent():
        self.unique_id = unique_id
        self.economy = economy
        self.wealth = wealth_begin
-       self.wealth_share = 1#self.wealth / self.economy.economy_wealth
-       self.wealth_share_power = 1#self.wealth / self.economy.economy_wealth
+       self.wealth_share = 1 #self.wealth / self.economy.economy_wealth
+       self.wealth_share_power = 1 #self.wealth / self.economy.economy_wealth
        self.beta = wealth_exponent
-       
+       self.wealth_growth_rate = 0
+       self.wealth_list = []
+       self.g_rate = 0 ### growth rate of wealth for individual agent
+       self.g_rate_list = []
     
+    def det_wealth_trajectory(self):
+        self.wealth_list.append(self.wealth)
+        if len(self.wealth_list) >= 2:
+            self.g_rate = (self.wealth_list[-1] / self.wealth_list[-2]) - 1
+        self.g_rate_list.append(self.g_rate)
+
+
     def determine_wealth_share(self):
        ### actual wealth share
        self.wealth_share = self.wealth / self.economy.economy_wealth
