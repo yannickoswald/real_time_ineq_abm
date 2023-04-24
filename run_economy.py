@@ -8,6 +8,7 @@ import pandas as pd
 import sys
 import numpy as np
 import random
+from tqdm import tqdm
 os.chdir(".")
 import matplotlib.pyplot as plt
 from economy_class_wealth import Economy
@@ -19,7 +20,7 @@ with open('./data/wealth_data_for_import.csv') as f:
     d1 = pd.read_csv(f, encoding = 'unicode_escape')
 #%%
 
-economy = Economy(1000, 0.025, 1, "Pareto_lognormal", 1990)
+economy = Economy(100, 0.025, 1.3, "Pareto_lognormal", 1990)
 ### one-time procedure
 economy.make_agents()
 list_agents = economy.agents
@@ -30,7 +31,7 @@ plt.show()
 data = []
 state_vectors = []
 time_horizon = 29*12 ## 29 years * 12 months
-for i in range(time_horizon):
+for i in tqdm(range(time_horizon)):
     economy.sum_of_agent_power()
     economy.grow()
     economy.distribute_wealth()
@@ -73,10 +74,10 @@ ax.set_ylim((-0.05, 1))
 ax.set_ylabel("Share of wealth")
 ax.margins(0)
 #plt.show()
-plt.savefig('fig1.png',  bbox_inches='tight', dpi=300)
+plt.savefig('fig2.png',  bbox_inches='tight', dpi=300)
 plt.show()
 #%% plot state space of agents that is wealth vs. growth rate of wealth (in a year?)
 
-for s in state_vectors: 
-    print(s[])
+#for s in state_vectors: 
+ #   print(s[])
         

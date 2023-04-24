@@ -37,7 +37,7 @@ class Economy():
         self.growth_rate_economy = (1+growth_rate)**(1/12) - 1## ~growth_rate / 12 ### MONTHLY growth rate
         #### the number of increments is important since it determines how the new
         #### wealth growth is divided and how many chances there are to receive some. 
-        self.increments = 10
+        self.increments = 100
         ### SET OTHER MODEL PARAMETERS
         ### track time in the economy 
         self.time = 0    
@@ -85,7 +85,7 @@ class Economy():
             elif self.distr == "Pareto_lognormal":
                 ### the scaling_coefficient is determined through the actual wealth average
                 ### in USD which is ~ 4.1*10^5 and the average/mean of the standardized
-                ### pareto lognormal distr which then still has to be scaled to match
+                ### pareto lognormal distr in scipy which then still has to be scaled to match
                 ### the empirical distribution
                 if self.start_year == 2019:
                     scale_coeff =  410400/5.26

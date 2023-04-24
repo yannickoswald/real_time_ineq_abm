@@ -50,6 +50,8 @@ class WealthAgent():
        self.wealth_list = []
        self.g_rate = 0 ### growth rate of wealth for individual agent
        self.g_rate_list = []
+       self.wealth_variance = 0.1*self.g_rate
+       self.g_rate_variance =  0.1*self.g_rate
     
     def det_wealth_trajectory(self):
         self.wealth_list.append(self.wealth)
