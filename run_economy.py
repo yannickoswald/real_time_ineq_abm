@@ -8,16 +8,31 @@ import pandas as pd
 import sys
 import numpy as np
 import random
-from tqdm import tqdm
+from tqdm import tqdm  ### package for progress bars
 os.chdir(".")
 import matplotlib.pyplot as plt
 from economy_class_wealth import Economy
 from inequality_metrics import find_wealth_groups
-#### implement progress bars ####
+from enkf_yo import EnsembleKalmanFilter
+
+
 #%%
 ### LOAD empirical monthly wealth Data
 with open('./data/wealth_data_for_import.csv') as f:
     d1 = pd.read_csv(f, encoding = 'unicode_escape')
+#%%
+
+filter_params = {"ensemble_size": 10}
+model_params = {"population_size": 100,
+ "growth_rate": 0.025,
+ "b_begin": 1.3,
+ "distribution": "Pareto_lognormal",
+ "start_year": 1990 }
+
+
+enkf = EnsembleKalmanFilter(Economy, filter_params, model_params)
+
+
 #%%
 
 economy = Economy(100, 0.025, 1.3, "Pareto_lognormal", 1990)
@@ -28,29 +43,23 @@ array_agent_wealth = np.asarray([x.wealth for x in economy.agents])
 plt.hist(array_agent_wealth, bins = 100)
 plt.show()
 
-data = []
-state_vectors = []
 time_horizon = 29*12 ## 29 years * 12 months
 for i in tqdm(range(time_horizon)):
-    economy.sum_of_agent_power()
-    economy.grow()
-    economy.distribute_wealth()
-    economy.determine_agent_trajectories()
-    data.append(find_wealth_groups(economy.agents, economy.economy_wealth))
-    economy.recalculate_wealth_shares()
-    state_vectors.append(economy.state_vec_data())
-    
+    economy.step()
     
 #top1_over_time = [x[0][0] for x in data] 
-top1_share_over_time = [x[1][0] for x in data] 
-top10_share_over_time = [x[1][1] for x in data] 
-middle40_share_over_time = [x[1][2] for x in data] 
-bottom50_share_over_time = [x[1][3] for x in data] 
+top1_share_over_time = [x[1][0] for x in economy.group_data] 
+top10_share_over_time = [x[1][1] for x in economy.group_data] 
+middle40_share_over_time = [x[1][2] for x in economy.group_data] 
+bottom50_share_over_time = [x[1][3] for x in economy.group_data] 
 
 wealth_groups_t_data = [top1_share_over_time,
                         top10_share_over_time,
                         middle40_share_over_time,
                         bottom50_share_over_time]
+
+
+from kalman_filter_prototype import EnsembleKalmanFilter
 
 
 #%%    

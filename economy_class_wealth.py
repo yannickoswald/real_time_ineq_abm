@@ -13,6 +13,7 @@ import random
 os.chdir(".")
 from agent_class_wealth import WealthAgent
 from scipy.stats import powerlognorm
+from inequality_metrics import find_wealth_groups
 
 #%%
 
@@ -57,7 +58,11 @@ class Economy():
         ### an agent given the agent parameter beta. Initialized as the usual 
         ### sum of wealth
         self.sum_power = self.total_wealth_init()
-    
+        ### state-space and data storing 
+        self.group_data = []  
+        self.state_vectors = []
+          
+         
     def total_wealth_init(self):
         ### computes total wealth in the economy bottom up from agents
         ### only used during initialization though, as afterwards a global
@@ -100,9 +105,8 @@ class Economy():
     def grow(self):     
         
         ''' This method represents economic growth. One time step represents
-            one day.'''
+            one month.'''
 
-        self.time = self.time + 1
         self.help_var = self.economy_wealth
         self.economy_wealth = self.economy_wealth * (1 + self.growth_rate_economy)
         self.new_wealth = self.economy_wealth - self.help_var
@@ -145,8 +149,7 @@ class Economy():
     def recalculate_wealth_shares(self):
         for x in self.agents: 
             x.determine_wealth_share()
-            
-            
+                
     def determine_agent_trajectories(self):
         for x in self.agents: 
             x.det_wealth_trajectory()
@@ -158,8 +161,17 @@ class Economy():
             sv_data[count,0] = x.wealth
             sv_data[count,1] = x.g_rate
         return sv_data
+    
+    def step(self): 
+        self.time = self.time + 1
+        self.sum_of_agent_power()
+        self.grow()
+        self.distribute_wealth()
+        self.determine_agent_trajectories()
+        self.group_data.append(find_wealth_groups(self.agents, self.economy_wealth))
+        self.recalculate_wealth_shares()
+        self.state_vectors.append((self.state_vec_data()))
         
-     
     def __repr__(self):
         return f"{self.__class__.__name__}('population size: {self.num_agents}'),('economy size: {self.economy_wealth}')"
         
