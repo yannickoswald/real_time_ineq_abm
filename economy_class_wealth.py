@@ -59,8 +59,8 @@ class Economy():
         ### sum of wealth
         self.sum_power = self.total_wealth_init()
         ### state-space and data storing 
-        self.group_data = []  
-        self.state_vectors = []
+        self.macro_state_vectors = [] ### wealth group data 
+        self.micro_state_vectors = [] ### system state on agent level
           
          
     def total_wealth_init(self):
@@ -154,7 +154,7 @@ class Economy():
         for x in self.agents: 
             x.det_wealth_trajectory()
     
-    def state_vec_data(self):
+    def micro_state_vec_data(self):
         ## two rows because we have w = wealth and wealth change rate as critical variables
         sv_data = np.zeros((self.num_agents, 2))   
         for count, x in enumerate(self.agents): 
@@ -168,9 +168,11 @@ class Economy():
         self.grow()
         self.distribute_wealth()
         self.determine_agent_trajectories()
-        self.group_data.append(find_wealth_groups(self.agents, self.economy_wealth))
+        a = find_wealth_groups(self.agents, self.economy_wealth)
+        self.macro_state_vectors.append(a)
+        self.macro_state = a[1]
         self.recalculate_wealth_shares()
-        self.state_vectors.append((self.state_vec_data()))
+        self.micro_state_vectors.append((self.micro_state_vec_data()))
         
     def __repr__(self):
         return f"{self.__class__.__name__}('population size: {self.num_agents}'),('economy size: {self.economy_wealth}')"

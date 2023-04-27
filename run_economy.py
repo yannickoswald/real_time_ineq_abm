@@ -20,9 +20,18 @@ from enkf_yo import EnsembleKalmanFilter
 ### LOAD empirical monthly wealth Data
 with open('./data/wealth_data_for_import.csv') as f:
     d1 = pd.read_csv(f, encoding = 'unicode_escape')
+    
+### LOAD empirical monthly wealth Data sorted by group for state vector check
+with open('./data/wealth_data_for_import2.csv') as f2:
+    d2 = pd.read_csv(f2, encoding = 'unicode_escape')
 #%%
 
-filter_params = {"ensemble_size": 10}
+### let us say the state vector is the share of wealth 
+### of 4 wealth groups top 1%, top 10% etc.
+
+filter_params = {"ensemble_size": 10,
+                 "state_vector_length": 4}
+
 model_params = {"population_size": 100,
  "growth_rate": 0.025,
  "b_begin": 1.3,
@@ -31,6 +40,13 @@ model_params = {"population_size": 100,
 
 
 enkf = EnsembleKalmanFilter(Economy, filter_params, model_params)
+enkf.predict()
+enkf.set_current_obs()
+enkf.update_data_ensemble()
+enkf.update_state_ensemble()
+enkf.make_ensemble_covariance()
+
+
 
 
 #%%
@@ -48,10 +64,10 @@ for i in tqdm(range(time_horizon)):
     economy.step()
     
 #top1_over_time = [x[0][0] for x in data] 
-top1_share_over_time = [x[1][0] for x in economy.group_data] 
-top10_share_over_time = [x[1][1] for x in economy.group_data] 
-middle40_share_over_time = [x[1][2] for x in economy.group_data] 
-bottom50_share_over_time = [x[1][3] for x in economy.group_data] 
+top1_share_over_time = [x[1][0] for x in economy.macro_state_vectors] 
+top10_share_over_time = [x[1][1] for x in economy.macro_state_vectors] 
+middle40_share_over_time = [x[1][2] for x in economy.macro_state_vectors] 
+bottom50_share_over_time = [x[1][3] for x in economy.macro_state_vectors] 
 
 wealth_groups_t_data = [top1_share_over_time,
                         top10_share_over_time,
