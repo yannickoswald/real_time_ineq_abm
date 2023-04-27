@@ -39,14 +39,14 @@ class EnsembleKalmanFilter:
         #print(model, model_params)    
         # Set up ensemble of models
         self.models = [model(**model_params) for _ in range(self.ensemble_size)]
-
         self.state_ensemble = np.zeros(shape=(self.state_vector_length,
                                               self.ensemble_size))
+        
+        ## set other global properties
         self.time = 0 
         
         
-        ### load observation data 
-        
+        ### load observation data
         ### LOAD empirical monthly wealth Data sorted by group
         ### for state vector check
         with open('./data/wealth_data_for_import2.csv') as f2:
