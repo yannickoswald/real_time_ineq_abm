@@ -45,6 +45,7 @@ enkf.set_current_obs()
 enkf.update_data_ensemble()
 enkf.update_state_ensemble()
 enkf.make_ensemble_covariance()
+enkf.make_data_covariance()
 
 
 

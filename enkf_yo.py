@@ -41,7 +41,10 @@ class EnsembleKalmanFilter:
         self.models = [model(**model_params) for _ in range(self.ensemble_size)]
         self.state_ensemble = np.zeros(shape=(self.state_vector_length,
                                               self.ensemble_size))
-        
+        self.ensemble_covariance = None
+        ###
+        self.data_ensemble = None 
+        self.data_covariance = None
         ## set other global properties
         self.time = 0 
         
@@ -92,11 +95,15 @@ class EnsembleKalmanFilter:
         """
         Create ensemble covariance matrix.
         """
-        a = self.state_ensemble @ np.ones(shape=(self.ensemble_size, 1))
-        b = np.ones(shape=(1, self.ensemble_size))
-        A = self.state_ensemble - 1/self.ensemble_size * a @ b
-        return 1/(self.ensemble_size - 1) * A @ A.T
+        self.ensemble_covariance = np.cov(self.state_ensemble)
     
+    
+    def make_data_covariance(self):
+        """
+        Create data covariance matrix.
+        """
+        self.data_covariance = np.diag(self.current_obs_var)
+            
     
     def update_data_ensemble(self):
         """
@@ -105,9 +112,40 @@ class EnsembleKalmanFilter:
         R - data (co?)variance; this should be either a number or a vector with
         same length as the data.
         """
-        x = np.zeros(shape=(len(self.current_obs), self.ensemble_size))
+        
+        x = np.zeros(shape=(len(self.current_obs), self.ensemble_size)) 
         for i in range(self.ensemble_size):
-            x[:, i] = self.current_obs + np.random.normal(0, 
-                                                          self.current_obs_var,
-                                                          len(self.current_obs))
-        self.data_ensemble = x
+            err = np.random.normal(0, self.current_obs_var, len(self.current_obs))
+            x[:, i] = self.current_obs + err
+            
+            
+    def make_gain_matrix(self):
+        """
+        Create kalman gain matrix.
+        """
+        """
+        Version from Gillijns, Barrero Mendoza, etc.
+        # Find state mean and data mean
+        data_mean = np.mean(self.data_ensemble, axis=1)
+        # Find state error and data error matrices
+        state_error = np.zeros(shape=(self.state_vector_length,
+                                      self.ensemble_size))
+        data_error = np.zeros(shape=(self.data_vector_length,
+                                     self.ensemble_size))
+        for i in range(self.ensemble_size):
+            state_error[:, i] = self.state_ensemble[:, i] - self.state_mean
+            data_error[:, i] = self.data_ensemble[:, i] - data_mean
+        P_x = 1 / (self.ensemble_size - 1) * state_error @ state_error.T
+        P_xy = 1 / (self.ensemble_size - 1) * state_error @ data_error.T
+        P_y = 1 / (self.ensemble_size -1) * data_error @ data_error.T
+        K = P_xy @ np.linalg.inv(P_y)
+        return K
+        """
+        """
+        More standard version
+        """
+        C = np.cov(self.state_ensemble)
+        state_covariance = self.H @ C @ self.H_transpose
+        diff = state_covariance + self.data_covariance
+        return C @ self.H_transpose @ np.linalg.inv(diff)
+        
