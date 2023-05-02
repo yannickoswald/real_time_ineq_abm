@@ -127,7 +127,7 @@ class EnsembleKalmanFilter:
         if len(data) != self.data_vector_length:
             w = 'len(data)={0}, expected {1}'.format(len(data),
                                                      self.data_vector_length)
-            warns.warn(w, RuntimeWarning)
+            warns.warn(w, RuntimeWarning) self.data_ensemble
         X = np.zeros(shape=(self.state_vector_length, self.ensemble_size))
         gain_matrix = self.make_gain_matrix()
         self.update_data_ensemble(data)
@@ -159,7 +159,7 @@ class EnsembleKalmanFilter:
         x = np.zeros(shape=(len(data), self.ensemble_size))
         for i in range(self.ensemble_size):
             x[:, i] = data + np.random.normal(0, self.R_vector, len(data))
-        self.data_ensemble = x
+        = x
 
     def update_models(self):
         """

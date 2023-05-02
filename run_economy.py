@@ -46,6 +46,12 @@ enkf.update_data_ensemble()
 enkf.update_state_ensemble()
 enkf.make_ensemble_covariance()
 enkf.make_data_covariance()
+enkf.make_gain_matrix()
+print(enkf.state_ensemble)
+test0 = enkf.state_ensemble
+enkf.state_update()
+test1 = enkf.state_ensemble
+print(enkf.state_ensemble)
 
 
 
