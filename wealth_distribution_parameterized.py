@@ -137,3 +137,23 @@ sampled_distr2 = PLN_normalized(1.92, 2.08, sample_size)
 groups_modelled2, raw_sample2, mean2 = sampled_distr2[0], sampled_distr2[1], sampled_distr2[2]
 plot2 = plot_wealth_groups(empirical_wealth_shares_1990, groups_modelled2)
 plot2.suptitle("PLN-model opt fit 1990 vs. empirical data",  y=1.05)
+
+#%% FIND THE PROPER SCALE COEFFICIENTS
+#### NEEDS TO BE FURTHER OPTIMITZED LATER CODE ALSO
+import numpy as np
+from scipy.stats import powerlognorm
+scale_coeff = 150000
+sample_size = 1000000
+##distribution for 1990
+sample = powerlognorm.rvs(1.92, 2.08, size=sample_size)*scale_coeff
+sample = np.flip(np.sort(sample))
+
+
+total_average = np.mean(sample)
+top1_average = np.mean(sample[:int(0.01*sample_size)])
+top10_average = np.mean(sample[:int(0.1*sample_size)])
+next40_average = np.mean(sample[int(0.1*sample_size):int(0.5*sample_size)])
+bottom50_average = np.mean(sample[int(0.5*sample_size):])
+
+
+

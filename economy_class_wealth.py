@@ -59,6 +59,8 @@ class Economy():
         ### sum of wealth
         self.sum_power = self.total_wealth_init()
         ### state-space and data storing 
+        self.macro_state = None
+        self.micro_state = None
         self.macro_state_vectors = [] ### wealth group data 
         self.micro_state_vectors = [] ### system state on agent level
           
@@ -88,15 +90,13 @@ class Economy():
             if self.distr == "all_equal":
                 a_wealth = 10000
             elif self.distr == "Pareto_lognormal":
-                ### the scaling_coefficient is determined through the actual wealth average
-                ### in USD which is ~ 4.1*10^5 and the average/mean of the standardized
-                ### pareto lognormal distr in scipy which then still has to be scaled to match
-                ### the empirical distribution
+                ### the scaling_coefficient is determined by fitting the wealth average
+                ### of the sample distr. to the empirical wealth average
                 if self.start_year == 2019:
-                    scale_coeff =  410400/5.26
+                    scale_coeff =  200000
                     a_wealth = powerlognorm.rvs(0.33, 1.15, size=1)*scale_coeff
                 elif self.start_year == 1990:
-                    scale_coeff = 203900/5.26
+                    scale_coeff = 150000
                     a_wealth = powerlognorm.rvs(1.92, 2.08, size=1)*scale_coeff
             ## create agent
             agents.append(WealthAgent(i, a_wealth, self, self.economy_beta))
@@ -170,9 +170,11 @@ class Economy():
         self.determine_agent_trajectories()
         a = find_wealth_groups(self.agents, self.economy_wealth)
         self.macro_state_vectors.append(a)
-        self.macro_state = a[1]
-        self.recalculate_wealth_shares()
+        self.macro_state = a[0]
         self.micro_state_vectors.append((self.micro_state_vec_data()))
+        self.micro_state = self.micro_state_vec_data()
+        self.recalculate_wealth_shares()
+        
         
     def __repr__(self):
         return f"{self.__class__.__name__}('population size: {self.num_agents}'),('economy size: {self.economy_wealth}')"

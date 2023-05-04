@@ -40,17 +40,8 @@ model_params = {"population_size": 100,
 
 
 enkf = EnsembleKalmanFilter(Economy, filter_params, model_params)
-enkf.predict()
-enkf.set_current_obs()
-enkf.update_data_ensemble()
-enkf.update_state_ensemble()
-enkf.make_ensemble_covariance()
-enkf.make_data_covariance()
-enkf.make_gain_matrix()
 print(enkf.state_ensemble)
-test0 = enkf.state_ensemble
-enkf.state_update()
-test1 = enkf.state_ensemble
+enkf.step()
 print(enkf.state_ensemble)
 
 
@@ -82,7 +73,6 @@ wealth_groups_t_data = [top1_share_over_time,
                         bottom50_share_over_time]
 
 
-from kalman_filter_prototype import EnsembleKalmanFilter
 
 
 #%%    

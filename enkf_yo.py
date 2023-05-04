@@ -48,20 +48,18 @@ class EnsembleKalmanFilter:
         self.state_mean = None
         self.time = 0 
         
-        
         ### load observation data
         ### LOAD empirical monthly wealth Data sorted by group
         ### for state vector check
         with open('./data/wealth_data_for_import2.csv') as f2:
-            self.data = pd.read_csv(f2, encoding = 'unicode_escape')
-            
+            self.data = pd.read_csv(f2, encoding = 'unicode_escape')    
             
         y = model_params["start_year"]
         idx_begin = min((self.data[self.data["year"]==1990].index.values))
         
         self.obs = self.data.iloc[idx_begin::][["year","month",
-                                    "real_wealth_share",
-                                    "variance_real_wealth_share"]]
+                                    "real_wealth_per_unit",
+                                    "variance_real_wealth"]]
     
     def predict(self):
         """
@@ -87,8 +85,10 @@ class EnsembleKalmanFilter:
         """
         Update self.state_ensemble based on the states of the models.
         """
+        
         for i in range(self.ensemble_size):
-            self.state_ensemble[:, i] = self.models[i].macro_state
+            self.macro_state_ensemble[:, i] = self.models[i].macro_state
+            self.micro_state_ensemble[:, i] = self.models[i].micro_state
             
     def update_state_mean(self):
             """
@@ -138,4 +138,15 @@ class EnsembleKalmanFilter:
             diff = self.data_ensemble[:, i] - self.state_ensemble[:, i]
             X[:, i] = self.state_ensemble[:, i] + self.Kalman_Gain @ diff
         self.state_ensemble = X
+        
+    def step(self):
+        self.predict()
+        self.set_current_obs()
+        self.update_state_ensemble()
+        self.update_state_mean()
+        self.update_data_ensemble()
+        self.make_ensemble_covariance()
+        self.make_data_covariance()
+        self.make_gain_matrix()
+        self.state_update()
 
