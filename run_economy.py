@@ -28,11 +28,12 @@ with open('./data/wealth_data_for_import2.csv') as f2:
 
 ### let us say the state vector is the share of wealth 
 ### of 4 wealth groups top 1%, top 10% etc.
-
+num_agents = 100
 filter_params = {"ensemble_size": 10,
-                 "state_vector_length": 4}
+                 "macro_state_vector_length": 4,
+                 "micro_state_vector_length": num_agents}
 
-model_params = {"population_size": 100,
+model_params = {"population_size": num_agents,
  "growth_rate": 0.025,
  "b_begin": 1.3,
  "distribution": "Pareto_lognormal",
@@ -40,10 +41,14 @@ model_params = {"population_size": 100,
 
 
 enkf = EnsembleKalmanFilter(Economy, filter_params, model_params)
-print(enkf.state_ensemble)
+print(enkf.micro_state_ensemble)
+print(enkf.macro_state_ensemble)
 enkf.step()
-print(enkf.state_ensemble)
+print(enkf.micro_state_ensemble)
+print(enkf.macro_state_ensemble)
 
+
+enkf.macro_state_ensemble
 
 
 

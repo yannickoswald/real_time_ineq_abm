@@ -14,10 +14,27 @@ import numpy as np
 
 
 #### random vector agent wealth
-agent_wealth_vec = np.random.rand(10,1)*100
-index_of_max = np.argmax(agent_wealth_vec)
-t = np.zeros((len(agent_wealth_vec),len(agent_wealth_vec)))
-t[index_of_max, index_of_max] = 1
+agent_wealth_vec = np.linspace(1,10,10).reshape((10, 1))
+wealth_group_data = np.linspace(1,4,4).reshape((4, 1))
 
-agent_wealth_vec * t
 
+H = np.zeros((10,4))
+H.shape
+agent_wealth_vec.shape
+
+H[:int(10*0.01),0] = 1
+H[:int(10*0.1),1] = 1
+H[int(10*0.1):int(10*0.5),2] = 1
+H[int(10*0.5):,3] = 1
+
+micro_to_macro_test = agent_wealth_vec.T@H
+
+
+def make_H(dim_micro_state, dim_data):
+    H = np.zeros((dim_micro_state, dim_data))
+    H[:int(10*0.01),0] = 1
+    H[:int(10*0.1),1] = 1
+    H[int(10*0.1):int(10*0.5),2] = 1
+    H[int(10*0.5):,3] = 1
+    return H
+    

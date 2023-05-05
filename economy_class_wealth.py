@@ -172,7 +172,7 @@ class Economy():
         self.macro_state_vectors.append(a)
         self.macro_state = a[0]
         self.micro_state_vectors.append((self.micro_state_vec_data()))
-        self.micro_state = self.micro_state_vec_data()
+        self.micro_state = self.micro_state_vec_data()[:,0]
         self.recalculate_wealth_shares()
         
         

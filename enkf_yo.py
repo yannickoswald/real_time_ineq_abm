@@ -27,7 +27,8 @@ class EnsembleKalmanFilter:
         """
         
         self.ensemble_size = None
-        self.state_vector_length = None
+        self.macro_state_vector_length = None
+        self.micro_state_vector_length = None
         
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():
@@ -39,8 +40,15 @@ class EnsembleKalmanFilter:
         #print(model, model_params)    
         # Set up ensemble of models and other global properties
         self.models = [model(**model_params) for _ in range(self.ensemble_size)]
-        shape_ens = (self.state_vector_length, self.ensemble_size)
-        self.state_ensemble = np.zeros(shape=shape_ens)
+        shape_macro = (self.macro_state_vector_length, self.ensemble_size)
+        shape_micro = (self.micro_state_vector_length, self.ensemble_size)
+        
+        self.macro_state_ensemble = np.zeros(shape=shape_macro)
+        self.micro_state_ensemble = np.zeros(shape=shape_micro)
+        #### Observation matrix = translation matrix between macro and micro
+        #### states
+        self.H = self.make_H(self.micro_state_vector_length, 4).T
+        
         self.ensemble_covariance = None
         self.data_ensemble = None 
         self.data_covariance = None
@@ -94,13 +102,13 @@ class EnsembleKalmanFilter:
             """
             Update self.state_mean based on the current state ensemble.
             """
-            self.state_mean = np.mean(self.state_ensemble, axis=1)
+            self.state_mean = np.mean(self.macro_state_ensemble, axis=1)
         
     def make_ensemble_covariance(self):
         """
         Create ensemble covariance matrix.
         """
-        self.ensemble_covariance = np.cov(self.state_ensemble)
+        self.ensemble_covariance = np.cov(self.macro_state_ensemble)
       
     def make_data_covariance(self):
         """
@@ -108,6 +116,15 @@ class EnsembleKalmanFilter:
         """
         self.data_covariance = np.diag(self.current_obs_var)
 
+    def make_H(self, dim_micro_state, dim_data):
+        H = np.zeros((dim_micro_state, dim_data))
+        L = self.micro_state_vector_length
+        H[:int(L*0.01),0] = 1
+        H[:int(L*0.1),1] = 1
+        H[int(L*0.1):int(L*0.5),2] = 1
+        H[int(L*0.5):,3] = 1
+        return H
+    
     def update_data_ensemble(self):
         """
         Create perturbed data vector.
@@ -124,20 +141,46 @@ class EnsembleKalmanFilter:
     def make_gain_matrix(self):
         """
         Create kalman gain matrix.
+        Should be a (n x 4) matrix since in the state update equation we have
+        the n-dim vector (because of n-agents) + the update term which 4 dimensional
+        so the Kalman Gain needs to make it (n x 1)
         """
-        diff = self.ensemble_covariance + self.data_covariance
-        self.Kalman_Gain = self.ensemble_covariance @ np.linalg.inv(diff) 
+        C = np.cov(self.micro_state_ensemble)
+        state_covariance = self.H @ C @ self.H.T
+        diff = state_covariance + self.data_covariance
+        self.Kalman_Gain = C @ self.H.T @ np.linalg.inv(diff)
         
     def state_update(self):
         """
         Update system state of model. This is the state update equation of the 
-        Kalman Filter.
+        Kalman Filter. Here the deceive step then is that the difference is 
+        calculated between self.data_ensemble (4-dimensional) and self.micro_state_ensemble
+        (n-dimensional) so there the observation matrix H
+        does a translation between micro and macro state. And 
+        we update the micro-level state vector which is n-
+        dimensional based on n-agents.
+        
         """
-        X = np.zeros(shape=(self.state_vector_length, self.ensemble_size))
+        X = np.zeros(shape=(self.micro_state_vector_length, self.ensemble_size))
+        Y = np.zeros(shape=(self.macro_state_vector_length, self.ensemble_size))
         for i in range(self.ensemble_size):
-            diff = self.data_ensemble[:, i] - self.state_ensemble[:, i]
-            X[:, i] = self.state_ensemble[:, i] + self.Kalman_Gain @ diff
-        self.state_ensemble = X
+            diff = self.data_ensemble[:, i] - self.H @ self.micro_state_ensemble[:, i]
+            print('this is the diff ', diff)
+            X[:, i] = self.micro_state_ensemble[:, i] + self.Kalman_Gain @ diff
+            Y[:, i] =  self.H @ X[:, i]
+        self.micro_state_ensemble = X
+        self.macro_state_ensemble = Y
+        
+    def update_models(self):
+        """
+        Update individual model states based on state ensemble.
+        """
+        #for i in range(self.ensemble_size):
+         #   self.models[i].state = self.state_ensemble[:, i]
+        pass ### will be filled later
+
+    def plot_macro_state(self):
+        pass ### will be filled later
         
     def step(self):
         self.predict()
@@ -148,5 +191,5 @@ class EnsembleKalmanFilter:
         self.make_ensemble_covariance()
         self.make_data_covariance()
         self.make_gain_matrix()
-        self.state_update()
+        #self.state_update()
 
