@@ -8,6 +8,7 @@ Created on Tue Apr 25 13:47:43 2023
 import warnings as warns
 import numpy as np
 import pandas as pd
+from plot_bivariate_distr import *
 
 # Classes
 class EnsembleKalmanFilter:
@@ -180,8 +181,33 @@ class EnsembleKalmanFilter:
         pass ### will be filled later
 
     def plot_macro_state(self):
-        pass ### will be filled later
+        x = self.macro_state_ensemble[0,:]
+        y = self.macro_state_ensemble[3,:]
+        x_mean = np.mean(x)
+        y_mean = np.mean(y)
+        x_hat = np.matrix([x_mean, y_mean]).T
+        C = np.cov(x,y)
+        # Set up grid for plotting
+        x_grid = np.linspace(0, max(x), 100)
+        y_grid = np.linspace(min(y)/2, max(y)*1.2, 100)
+        X, Y = np.meshgrid(x_grid, y_grid)
+        varname1 = "$ Wealth per adult Top 1%"
+        varname2 = "$ Weatlh per adult Bottom 50%"
+        plot_bivariate_normal(x_hat, C, X, Y, varname1, varname2)
         
+    def plot_micro_state(self):
+        pass
+        
+        ### plot distribution over all agents wealth as prob. density 
+        ### from here we can also plot the kalman filter process with 
+        ### its macro estimates on the 
+        ### same plot
+        
+        #### micro state as one-dim prob distribution is only one system state.
+        
+        
+        ### plot many overlapping probability distributions
+
     def step(self):
         self.predict()
         self.set_current_obs()

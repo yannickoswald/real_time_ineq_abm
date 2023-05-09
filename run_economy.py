@@ -44,6 +44,7 @@ enkf = EnsembleKalmanFilter(Economy, filter_params, model_params)
 print(enkf.micro_state_ensemble)
 print(enkf.macro_state_ensemble)
 enkf.step()
+enkf.plot_macro_state()
 print(enkf.micro_state_ensemble)
 print(enkf.macro_state_ensemble)
 
