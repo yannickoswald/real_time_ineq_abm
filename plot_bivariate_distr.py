@@ -88,7 +88,7 @@ def plot_bivariate_normal(x_hat, C, X, Y, varname1:str , varname2: str):
     ax.yaxis.set_tick_params(labelsize=12)
     #ax.set_xticklabels([0, 0.5, 1, 1.5,2,2.5,3,3.5])
     #ax.xaxis.set_major_formatter(LogFormatterSciNotation(base=10))
-    ax.yaxis.set_major_formatter(LogFormatterSciNotation(base=10))
+    #ax.yaxis.set_major_formatter(LogFormatterSciNotation(base=10))
     plt.show()
 
 #plot_bivariate_normal(x_hat, C, X, Y, "$ Wealth per adult Top 1%", "$ Weatlh per adult Bottom 50%")

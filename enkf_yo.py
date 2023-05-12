@@ -8,7 +8,10 @@ Created on Tue Apr 25 13:47:43 2023
 import warnings as warns
 import numpy as np
 import pandas as pd
-from plot_bivariate_distr import *
+from plot_bivariate_distr import *  
+from scipy.stats import powerlognorm
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 # Classes
 class EnsembleKalmanFilter:
@@ -64,7 +67,7 @@ class EnsembleKalmanFilter:
             self.data = pd.read_csv(f2, encoding = 'unicode_escape')    
             
         y = model_params["start_year"]
-        idx_begin = min((self.data[self.data["year"]==1990].index.values))
+        idx_begin = min((self.data[self.data["year"]==y].index.values))
         
         self.obs = self.data.iloc[idx_begin::][["year","month",
                                     "real_wealth_per_unit",
@@ -131,11 +134,13 @@ class EnsembleKalmanFilter:
         Create perturbed data vector.
         I.e. a replicate of the data vector plus normal random n-d vector.
         R - data (co?)variance; this should be either a number or a vector with
-        same length as the data.
+        same length as the data. Second parameter in np.random-normal 
+        is standard deviation. Be careful to take square root when
+        passing the obs variance.
         """
         x = np.zeros(shape=(len(self.current_obs), self.ensemble_size)) 
         for i in range(self.ensemble_size):
-            err = np.random.normal(0, self.current_obs_var, len(self.current_obs))
+            err = np.random.normal(0, np.sqrt(self.current_obs_var), len(self.current_obs))
             x[:, i] = self.current_obs + err
         self.data_ensemble = x
         
@@ -181,32 +186,103 @@ class EnsembleKalmanFilter:
         pass ### will be filled later
 
     def plot_macro_state(self):
-        x = self.macro_state_ensemble[0,:]
-        y = self.macro_state_ensemble[3,:]
+        
+        
+        ####################################
+        ### plot system macro-state estimate
+        ####################################
+        x = np.log(self.macro_state_ensemble[0,:])
+        y = np.log(self.macro_state_ensemble[3,:])
         x_mean = np.mean(x)
         y_mean = np.mean(y)
         x_hat = np.matrix([x_mean, y_mean]).T
         C = np.cov(x,y)
         # Set up grid for plotting
-        x_grid = np.linspace(0, max(x), 100)
-        y_grid = np.linspace(min(y)/2, max(y)*1.2, 100)
+        x_grid = np.linspace(min(x)*0.9, max(x)*1.1, 100)
+        y_grid = np.linspace(min(y)*0.9, max(y)*1.1, 100)
         X, Y = np.meshgrid(x_grid, y_grid)
-        varname1 = "$ Wealth per adult Top 1%"
-        varname2 = "$ Weatlh per adult Bottom 50%"
-        plot_bivariate_normal(x_hat, C, X, Y, varname1, varname2)
+        varname1 = "ln($ Wealth per adult Top 1%)"
+        varname2 = "ln($ Weatlh per adult Bottom 50%)"
         
+        ##########################################
+        ### plot observation also on the same plot
+        ##########################################
+        x2 = np.log(self.data_ensemble[0,:])
+        y2 = np.log(self.data_ensemble[3,:])
+        x_mean2 = np.mean(x2)
+        y_mean2 = np.mean(y2)
+        x_hat2 = np.matrix([x_mean2, y_mean2]).T
+        C2 = np.cov(x2,y2)
+        x_grid2 = np.linspace(min(x2)*0.9, max(x2)*1.1, 100)
+        y_grid2 = np.linspace(min(y2)*0.9, max(y2)*1.1, 100)
+        X2, Y2 = np.meshgrid(x_grid2, y_grid2)
+        varname1 = "ln($ Wealth per adult Top 1%)"
+        varname2 = "ln($ Weatlh per adult Bottom 50%)"
+        
+        
+        
+        fig, ax = plt.subplots(figsize=(10, 8))
+        ax.grid()
+            
+        #### SYSTEM ESTIMATE
+        Z = gen_gaussian_plot_vals(x_hat, C, X, Y)
+        ax.contourf(X, Y, Z, 6, alpha=0.6, cmap=cm.coolwarm)
+        cs = ax.contour(X, Y, Z, 6, colors="black")
+        
+        #### OBSERVATION 
+        
+        Z2 = gen_gaussian_plot_vals(x_hat2, C2, X2, Y2)
+        ax.contourf(X2, Y2, Z2, 6, alpha=0.6, cmap=cm.coolwarm)
+        cs2 = ax.contour(X2, Y2, Z2, 6, colors="black")
+        
+        
+        #Contour levels are a probability density
+        ax.clabel(cs,levels = cs.levels, inline=1, fontsize=10)
+        
+        ax.set_xlabel(varname1, fontsize = 14)
+        ax.set_ylabel(varname2, fontsize = 14)
+        ax.xaxis.set_tick_params(labelsize=12)
+        ax.yaxis.set_tick_params(labelsize=12)
+        #ax.set_xticklabels([0, 0.5, 1, 1.5,2,2.5,3,3.5])
+        #ax.xaxis.set_major_formatter(LogFormatterSciNotation(base=10))
+        #ax.yaxis.set_major_formatter(LogFormatterSciNotation(base=10))
+        plt.show()
+
+        
+            
     def plot_micro_state(self):
-        pass
         
-        ### plot distribution over all agents wealth as prob. density 
-        ### from here we can also plot the kalman filter process with 
-        ### its macro estimates on the 
-        ### same plot
-        
-        #### micro state as one-dim prob distribution is only one system state.
-        
-        
-        ### plot many overlapping probability distributions
+        """
+        Function estimates current micro state of models and the ensemble of model
+        estimates is an estimate for the EnKF micro state. This function estimates
+        the probability of wealth across agents. For this purpose it applies some 
+        Kernel Density estimation techniques.It has to do so on the log-transform of wealth
+        (base e, so natural log) because wealth is per definition in model 
+        power-lognormally distributed.The Gaussian, or any other, Kernel does not work well
+        for visualization purpose on this kind of distribution.
+        https://jakevdp.github.io/blog/2013/12/01/kernel-density-estimation/ 
+        """
+        fig, ax = plt.subplots()
+        ax.set_xlabel("ln(wealth) per agent")
+        colors = sns.color_palette("viridis", n_colors=self.ensemble_size)
+        for i in range(self.ensemble_size):
+            distr = np.log(self.micro_state_ensemble[:,i])
+            sns.kdeplot(data=distr,
+                        fill=False,
+                        alpha = 0.5,
+                        color = colors[i], 
+                        ax = ax)
+        mean_log = np.log(np.mean(self.micro_state_ensemble, axis = 1))
+        sns.kdeplot(data=mean_log,
+                    fill=False,
+                    alpha = 1,
+                    color = "black",
+                    lw = 3,
+                    linestyle = "--",
+                    ax = ax,
+                    label = "Mean of microstates")
+        ax.legend(frameon = False)
+        plt.show()
 
     def step(self):
         self.predict()

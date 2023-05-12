@@ -45,11 +45,13 @@ print(enkf.micro_state_ensemble)
 print(enkf.macro_state_ensemble)
 enkf.step()
 enkf.plot_macro_state()
+enkf.plot_micro_state()
 print(enkf.micro_state_ensemble)
 print(enkf.macro_state_ensemble)
 
 
 enkf.macro_state_ensemble
+
 
 
 
@@ -85,7 +87,7 @@ wealth_groups_t_data = [top1_share_over_time,
 ### PLOT empirical monthly wealth Data (01/1990 to 12/2018) vs model output
 colors = ["tab:red", "tab:blue", "grey", "y"]
 wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(6,4))
 for i, g in enumerate(wealth_groups): 
     x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
     y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
