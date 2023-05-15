@@ -187,6 +187,12 @@ class EnsembleKalmanFilter:
 
     def plot_macro_state(self, log_var: str):
         
+        '''This method plots the macro state of economy. That is the system state
+        estimate at a macro/aggregate level plus the observation for the current time step.
+        If the EnKF update step is actually conducted, this function plots three
+        different bivariate probability distributions in one plot: 1) previous
+        system estimate 2) observation including their uncertainty 3) new estimate'''
+        
         if not isinstance(log_var, str):
             raise TypeError
         
