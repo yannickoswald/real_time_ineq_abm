@@ -159,7 +159,7 @@ class EnsembleKalmanFilter:
     def state_update(self):
         """
         Update system state of model. This is the state update equation of the 
-        Kalman Filter. Here the deceive step then is that the difference is 
+        Kalman Filter. Here the decisive step then is that the difference is 
         calculated between self.data_ensemble (4-dimensional) and self.micro_state_ensemble
         (n-dimensional) so there the observation matrix H
         does a translation between micro and macro state. And 
@@ -185,30 +185,43 @@ class EnsembleKalmanFilter:
          #   self.models[i].state = self.state_ensemble[:, i]
         pass ### will be filled later
 
-    def plot_macro_state(self):
+    def plot_macro_state(self, log_var: str):
         
+        if not isinstance(log_var, str):
+            raise TypeError
         
         ####################################
-        ### plot system macro-state estimate
+        ### prepare system macro-state estimate
         ####################################
-        x = np.log(self.macro_state_ensemble[0,:])
-        y = np.log(self.macro_state_ensemble[3,:])
+        if log_var == "yes":
+            x = np.log(self.macro_state_ensemble[0,:])
+            y = np.log(self.macro_state_ensemble[3,:])
+            # Set up grid points for plotting later fed into meshgrid
+            x_grid = np.linspace(min(x)*0.9, max(x)*1.1, 100)
+            y_grid = np.linspace(min(y)*0.9, max(y)*1.1, 100)
+        elif log_var == "no":
+            x = self.macro_state_ensemble[0,:]
+            y = self.macro_state_ensemble[3,:]
+            x_grid = np.linspace(0, max(x)*1.1, 100)
+            y_grid = np.linspace(0, max(y)*1.1, 100)
         x_mean = np.mean(x)
         y_mean = np.mean(y)
         x_hat = np.matrix([x_mean, y_mean]).T
         C = np.cov(x,y)
         # Set up grid for plotting
-        x_grid = np.linspace(min(x)*0.9, max(x)*1.1, 100)
-        y_grid = np.linspace(min(y)*0.9, max(y)*1.1, 100)
         X, Y = np.meshgrid(x_grid, y_grid)
         varname1 = "ln($ Wealth per adult Top 1%)"
         varname2 = "ln($ Weatlh per adult Bottom 50%)"
         
         ##########################################
-        ### plot observation also on the same plot
+        ### prepare observation also on the same plot
         ##########################################
-        x2 = np.log(self.data_ensemble[0,:])
-        y2 = np.log(self.data_ensemble[3,:])
+        if log_var == "yes":
+            x2 = np.log(self.data_ensemble[0,:])
+            y2 = np.log(self.data_ensemble[3,:])
+        elif log_var == "no": 
+            x2 = self.data_ensemble[0,:]
+            y2 = self.data_ensemble[3,:]
         x_mean2 = np.mean(x2)
         y_mean2 = np.mean(y2)
         x_hat2 = np.matrix([x_mean2, y_mean2]).T
@@ -218,27 +231,25 @@ class EnsembleKalmanFilter:
         X2, Y2 = np.meshgrid(x_grid2, y_grid2)
         varname1 = "ln($ Wealth per adult Top 1%)"
         varname2 = "ln($ Weatlh per adult Bottom 50%)"
-        
-        
-        
+        ###########################
+        ####### ACTUAL PLOT #######
+        ###########################
         fig, ax = plt.subplots(figsize=(10, 8))
         ax.grid()
-            
+
         #### SYSTEM ESTIMATE
         Z = gen_gaussian_plot_vals(x_hat, C, X, Y)
         ax.contourf(X, Y, Z, 6, alpha=0.6, cmap=cm.coolwarm)
         cs = ax.contour(X, Y, Z, 6, colors="black")
-        
         #### OBSERVATION 
-        
+        ### obs needs to be plotted on same grid for comparison, hence X and Y
         Z2 = gen_gaussian_plot_vals(x_hat2, C2, X2, Y2)
-        ax.contourf(X2, Y2, Z2, 6, alpha=0.6, cmap=cm.coolwarm)
-        cs2 = ax.contour(X2, Y2, Z2, 6, colors="black")
-        
-        
+        if log_var == "yes":
+            Z2[Z2<1.0e-02] = 0
+        cs2 = ax.contour(X, Y, Z2, 4, colors="black", linestyles = '--')
+        #ax.contourf(X, Y, Z2, 6, alpha=0.6)
         #Contour levels are a probability density
         ax.clabel(cs,levels = cs.levels, inline=1, fontsize=10)
-        
         ax.set_xlabel(varname1, fontsize = 14)
         ax.set_ylabel(varname2, fontsize = 14)
         ax.xaxis.set_tick_params(labelsize=12)
@@ -247,8 +258,6 @@ class EnsembleKalmanFilter:
         #ax.xaxis.set_major_formatter(LogFormatterSciNotation(base=10))
         #ax.yaxis.set_major_formatter(LogFormatterSciNotation(base=10))
         plt.show()
-
-        
             
     def plot_micro_state(self):
         
@@ -284,7 +293,11 @@ class EnsembleKalmanFilter:
         ax.legend(frameon = False)
         plt.show()
 
-    def step(self):
+    def step(self, update: str):
+        
+        if not isinstance(update, str):
+            raise TypeError
+            
         self.predict()
         self.set_current_obs()
         self.update_state_ensemble()
@@ -293,5 +306,7 @@ class EnsembleKalmanFilter:
         self.make_ensemble_covariance()
         self.make_data_covariance()
         self.make_gain_matrix()
-        #self.state_update()
+    
+        if update == "true": 
+            self.state_update()
 
