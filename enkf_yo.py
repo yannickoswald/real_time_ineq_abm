@@ -49,6 +49,12 @@ class EnsembleKalmanFilter:
         
         self.macro_state_ensemble = np.zeros(shape=shape_macro)
         self.micro_state_ensemble = np.zeros(shape=shape_micro)
+        ## fill variable to record previous state estimate sin case of update
+        self.micro_state_ensemble_old = None
+        self.macro_state_ensemble_old = None
+        ## var to pass on to other methods 
+        ## for decision making
+        self.update_decision = None
         #### Observation matrix = translation matrix between macro and micro
         #### states
         self.H = self.make_H(self.micro_state_vector_length, 4).T
@@ -121,12 +127,21 @@ class EnsembleKalmanFilter:
         self.data_covariance = np.diag(self.current_obs_var)
 
     def make_H(self, dim_micro_state, dim_data):
+        
+        ''' This method creates the observation vector. It makes a matrix that 
+        transform the microstate of a model into the macrostate. The micro state is just
+        the ordered (from top to down) wealth of agents and the macrostate the 
+        average wealth per top 1%, top10%, next40%, bottom50%. Therefore it is 
+        a matrix that sums the normalized agent wealth values so that they yield
+        the average per group. This means the normalization constant is just 1/k
+        where k is the number of agents per group.'''
+        
         H = np.zeros((dim_micro_state, dim_data))
         L = self.micro_state_vector_length
-        H[:int(L*0.01),0] = 1
-        H[:int(L*0.1),1] = 1
-        H[int(L*0.1):int(L*0.5),2] = 1
-        H[int(L*0.5):,3] = 1
+        H[:int(L*0.01),0] = 1/(L*0.01) ### H entries are normalized
+        H[:int(L*0.1),1] = 1/(L*0.1)
+        H[int(L*0.1):int(L*0.5),2] = 1/(L*0.4)
+        H[int(L*0.5):,3] = 1/(L*0.5)
         return H
     
     def update_data_ensemble(self):
@@ -167,6 +182,10 @@ class EnsembleKalmanFilter:
         dimensional based on n-agents.
         
         """
+        ## save previous system state estimate before updating
+        self.micro_state_ensemble_old = self.micro_state_ensemble
+        self.macro_state_ensemble_old = self.macro_state_ensemble
+        ### start update
         X = np.zeros(shape=(self.micro_state_vector_length, self.ensemble_size))
         Y = np.zeros(shape=(self.macro_state_vector_length, self.ensemble_size))
         for i in range(self.ensemble_size):
@@ -225,18 +244,42 @@ class EnsembleKalmanFilter:
         if log_var == "yes":
             x2 = np.log(self.data_ensemble[0,:])
             y2 = np.log(self.data_ensemble[3,:])
+            x_grid2 = np.linspace(min(x2)*0.9, max(x2)*1.1, 100)
+            y_grid2 = np.linspace(min(y2)*0.9, max(y2)*1.1, 100)
         elif log_var == "no": 
             x2 = self.data_ensemble[0,:]
             y2 = self.data_ensemble[3,:]
+            x_grid2 = np.linspace(0, max(x2)*1.1, 100)
+            y_grid2 = np.linspace(0, max(y2)*1.1, 100)
         x_mean2 = np.mean(x2)
         y_mean2 = np.mean(y2)
         x_hat2 = np.matrix([x_mean2, y_mean2]).T
         C2 = np.cov(x2,y2)
-        x_grid2 = np.linspace(min(x2)*0.9, max(x2)*1.1, 100)
-        y_grid2 = np.linspace(min(y2)*0.9, max(y2)*1.1, 100)
         X2, Y2 = np.meshgrid(x_grid2, y_grid2)
         varname1 = "ln($ Wealth per adult Top 1%)"
         varname2 = "ln($ Weatlh per adult Bottom 50%)"
+        
+        ##########################################
+        ### prepare old state estimate on the same plot
+        ### in case the time step included an EnKF update step
+        ##########################################
+        if self.update_decision == True: 
+            if log_var == "yes":
+                x3 = np.log(self.macro_state_ensemble_old[0,:])
+                y3 = np.log(self.macro_state_ensemble_old[3,:])
+            elif log_var == "no":
+                x3 = self.macro_state_ensemble_old[0,:]
+                y3 = self.macro_state_ensemble_old[3,:]
+
+            x3_mean = np.mean(x3)
+            y3_mean = np.mean(y3)
+            x3_hat = np.matrix([x3_mean, y3_mean]).T
+            C3 = np.cov(x3,y3)
+            # Set up grid for plotting
+            #X, Y = np.meshgrid(x_grid, y_grid)
+            #varname1 = "ln($ Wealth per adult Top 1%)"
+            #varname2 = "ln($ Weatlh per adult Bottom 50%)"
+    
         ###########################
         ####### ACTUAL PLOT #######
         ###########################
@@ -247,12 +290,24 @@ class EnsembleKalmanFilter:
         Z = gen_gaussian_plot_vals(x_hat, C, X, Y)
         ax.contourf(X, Y, Z, 6, alpha=0.6, cmap=cm.coolwarm)
         cs = ax.contour(X, Y, Z, 6, colors="black")
+        
         #### OBSERVATION 
         ### obs needs to be plotted on same grid for comparison, hence X and Y
-        Z2 = gen_gaussian_plot_vals(x_hat2, C2, X2, Y2)
-        if log_var == "yes":
-            Z2[Z2<1.0e-02] = 0
-        cs2 = ax.contour(X, Y, Z2, 4, colors="black", linestyles = '--')
+        Z2 = gen_gaussian_plot_vals(x_hat2, C2, X, Y)
+        #if log_var == "yes":
+        Z2[Z2<np.mean(Z2)/100] = 0
+        ax.contour(X, Y, Z2, 4, colors="black", linestyles = '--')
+        
+        ### **PREVIOUS** System estimate
+        #### old estimate plot if included
+        u = self.update_decision
+        v = self.macro_state_ensemble_old
+        if u == True and not v is None:
+            Z3 = gen_gaussian_plot_vals(x3_hat, C3, X, Y)
+            #if log_var == "yes":
+            Z3[Z3<np.mean(Z3)/100] = 0
+            ax.contour(X, Y, Z3, 4, colors="black", linestyles = 'dotted')
+        
         #ax.contourf(X, Y, Z2, 6, alpha=0.6)
         #Contour levels are a probability density
         ax.clabel(cs,levels = cs.levels, inline=1, fontsize=10)
@@ -264,7 +319,8 @@ class EnsembleKalmanFilter:
         #ax.xaxis.set_major_formatter(LogFormatterSciNotation(base=10))
         #ax.yaxis.set_major_formatter(LogFormatterSciNotation(base=10))
         plt.show()
-            
+        return X,Y,X2,Y2, Z2
+        
     def plot_micro_state(self):
         
         """
@@ -299,11 +355,13 @@ class EnsembleKalmanFilter:
         ax.legend(frameon = False)
         plt.show()
 
-    def step(self, update: str):
+    def step(self, update: bool):
         
-        if not isinstance(update, str):
+        if not isinstance(update, bool):
             raise TypeError
-            
+        
+        self.update_decision = update ## var to pass on to other methods 
+                                      ## for decision making
         self.predict()
         self.set_current_obs()
         self.update_state_ensemble()
@@ -312,7 +370,9 @@ class EnsembleKalmanFilter:
         self.make_ensemble_covariance()
         self.make_data_covariance()
         self.make_gain_matrix()
-    
-        if update == "true": 
+        if update == True: 
             self.state_update()
-
+        #### plot of the macro_state needs to come after state_update() so that
+        #### it either includes all 3 (previous, new, observation) state estimates   
+        #### or only the non-updated plus obsverational one
+        self.plot_macro_state(log_var = "no")
