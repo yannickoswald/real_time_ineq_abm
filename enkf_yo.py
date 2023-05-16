@@ -26,8 +26,6 @@ class EnsembleKalmanFilter:
             model
             filter_params
             model_params
-        Returns:
-            None
         """
         
         self.ensemble_size = None
@@ -109,10 +107,10 @@ class EnsembleKalmanFilter:
             self.micro_state_ensemble[:, i] = self.models[i].micro_state
             
     def update_state_mean(self):
-            """
-            Update self.state_mean based on the current state ensemble.
-            """
-            self.state_mean = np.mean(self.macro_state_ensemble, axis=1)
+        """
+        Update self.state_mean based on the current state ensemble.
+        """
+        self.state_mean = np.mean(self.macro_state_ensemble, axis=1)
         
     def make_ensemble_covariance(self):
         """
@@ -267,16 +265,20 @@ class EnsembleKalmanFilter:
             if log_var == "yes":
                 x3 = np.log(self.macro_state_ensemble_old[0,:])
                 y3 = np.log(self.macro_state_ensemble_old[3,:])
+                x_grid3 = np.linspace(min(x3)*0.9, max(x3)*1.1, 100)
+                y_grid3 = np.linspace(min(y3)*0.9, max(y3)*1.1, 100)
             elif log_var == "no":
                 x3 = self.macro_state_ensemble_old[0,:]
                 y3 = self.macro_state_ensemble_old[3,:]
+                x_grid3= np.linspace(0, max(x3)*1.1, 100)
+                y_grid3 = np.linspace(0, max(y3)*1.1, 100)
 
             x3_mean = np.mean(x3)
             y3_mean = np.mean(y3)
             x3_hat = np.matrix([x3_mean, y3_mean]).T
             C3 = np.cov(x3,y3)
             # Set up grid for plotting
-            #X, Y = np.meshgrid(x_grid, y_grid)
+            X3, Y3 = np.meshgrid(x_grid3, y_grid3)
             #varname1 = "ln($ Wealth per adult Top 1%)"
             #varname2 = "ln($ Weatlh per adult Bottom 50%)"
     
@@ -285,12 +287,22 @@ class EnsembleKalmanFilter:
         ###########################
         fig, ax = plt.subplots(figsize=(10, 8))
         ax.grid()
+        
+        
+        ########### NECESSARY CONTROL FLOW FOR different plot during update step
+        ########## MAKE NICER
 
         #### SYSTEM ESTIMATE
-        Z = gen_gaussian_plot_vals(x_hat, C, X, Y)
-        ax.contourf(X, Y, Z, 6, alpha=0.6, cmap=cm.coolwarm)
-        cs = ax.contour(X, Y, Z, 6, colors="black")
-        
+        if self.update_decision == False: 
+            Z = gen_gaussian_plot_vals(x_hat, C, X, Y)
+            ax.contourf(X, Y, Z, 6, alpha=0.6, cmap=cm.coolwarm)
+            cs = ax.contour(X, Y, Z, 6, colors="black")
+        else: 
+            Z = gen_gaussian_plot_vals(x_hat, C, X3, Y3)
+            ax.contourf(X3, Y3, Z, 6, alpha=0.6, cmap=cm.coolwarm)
+            cs = ax.contour(X3, Y3, Z, 6, colors="black")
+            
+            
         #### OBSERVATION 
         ### obs needs to be plotted on same grid for comparison, hence X and Y
         Z2 = gen_gaussian_plot_vals(x_hat2, C2, X, Y)
@@ -303,10 +315,10 @@ class EnsembleKalmanFilter:
         u = self.update_decision
         v = self.macro_state_ensemble_old
         if u == True and not v is None:
-            Z3 = gen_gaussian_plot_vals(x3_hat, C3, X, Y)
+            Z3 = gen_gaussian_plot_vals(x3_hat, C3, X3, Y3)
             #if log_var == "yes":
             Z3[Z3<np.mean(Z3)/100] = 0
-            ax.contour(X, Y, Z3, 4, colors="black", linestyles = 'dotted')
+            ax.contour(X3, Y3, Z3, 6, colors="black", linestyles = 'dotted')
         
         #ax.contourf(X, Y, Z2, 6, alpha=0.6)
         #Contour levels are a probability density
