@@ -43,7 +43,7 @@ model_params = {"population_size": num_agents,
 enkf = EnsembleKalmanFilter(Economy, filter_params, model_params)
 print(enkf.micro_state_ensemble)
 print(enkf.macro_state_ensemble)
-time_horizon = 12 ## 29 years * 12 months
+time_horizon = 2 ## 29 years * 12 months
 for i in tqdm(range(time_horizon)):
     ### set update to false or true
     if i % 10 != 0 or i == 0: 

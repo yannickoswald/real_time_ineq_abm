@@ -175,6 +175,15 @@ class Economy():
         self.micro_state = self.micro_state_vec_data()[:,0]
         self.recalculate_wealth_shares()
         
+    def update_agent_states(self):
+        '''update agent states after EnKF state vector update. Needs 
+        possibly to be verified further to ensure correct running results.'''
+        for count, x in enumerate(self.agents): 
+            x.wealth = self.micro_state[count]
+            print(x.wealth)
+            
+            
+        #for count, x in enumerate(enkf.models[0].agents): print(count, x, x.wealth,enkf.models[0].micro_state[count])
         
     def __repr__(self):
         return f"{self.__class__.__name__}('population size: {self.num_agents}'),('economy size: {self.economy_wealth}')"

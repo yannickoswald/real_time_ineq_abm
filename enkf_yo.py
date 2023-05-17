@@ -198,9 +198,13 @@ class EnsembleKalmanFilter:
         """
         Update individual model states based on state ensemble.
         """
-        #for i in range(self.ensemble_size):
-         #   self.models[i].state = self.state_ensemble[:, i]
-        pass ### will be filled later
+        for i in range(self.ensemble_size):
+            self.models[i].micro_state = self.micro_state_ensemble[:, i]
+            self.models[i].macro_state = self.macro_state_ensemble[:, i]
+            self.models[i].update_agent_states()
+            assert self.models[i].agents[0].wealth == self.micro_state_ensemble[:, i][0]
+        ##### HERE EACH MODEL ECONOMY NEEDS TO UPDATE ITS OWN INTERNAL AGENT
+        ##### STATES 
 
     def plot_macro_state(self, log_var: str):
         
@@ -331,7 +335,7 @@ class EnsembleKalmanFilter:
         #ax.xaxis.set_major_formatter(LogFormatterSciNotation(base=10))
         #ax.yaxis.set_major_formatter(LogFormatterSciNotation(base=10))
         plt.show()
-        return X,Y,X2,Y2, Z2
+        #return X,Y,X2,Y2, Z2
         
     def plot_micro_state(self):
         
@@ -366,6 +370,40 @@ class EnsembleKalmanFilter:
                     label = "Mean of microstates")
         ax.legend(frameon = False)
         plt.show()
+        
+    def make_fanchart():
+        
+        '''make fancharts of model runs over growth rate, average wealth per adult,
+        as well as wealth share by group until up to time point
+        where the filter/model is applied to. Similar to current fig 2'''
+        
+        ### PLOT empirical monthly wealth Data vs model output for chosen time-frame
+        colors = ["tab:red", "tab:blue", "grey", "y"]
+        wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
+        
+        
+        '''
+        ### PLOT empirical monthly wealth Data (01/1990 to 12/2018) vs model output
+        colors = ["tab:red", "tab:blue", "grey", "y"]
+        wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
+        fig, ax = plt.subplots(figsize=(6,4))
+        for i, g in enumerate(wealth_groups): 
+            x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
+            y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
+            x1 = np.linspace(1,time_horizon,time_horizon)
+            y1 = wealth_groups_t_data[i]
+            ax.plot(x,y, label = g, color = colors[i])
+            ax.plot(x1, y1, label = g + ' model', linestyle = '--', color = colors[i])
+            
+        x = x.reset_index(drop=True)
+        ax.set_xticks(x.iloc[0::20].index)
+        ax.set_xticklabels(x.iloc[0::20], rotation = 90)
+        ax.legend(frameon = False, bbox_to_anchor=(0.45, 0.7, 1., .102))
+        ax.set_ylim((-0.05, 1))
+        ax.set_ylabel("Share of wealth")
+        ax.margins(0)
+        '''
+        pass
 
     def step(self, update: bool):
         
@@ -388,3 +426,7 @@ class EnsembleKalmanFilter:
         #### it either includes all 3 (previous, new, observation) state estimates   
         #### or only the non-updated plus obsverational one
         self.plot_macro_state(log_var = "no")
+        if update == True: 
+            self.update_models()
+            
+        
