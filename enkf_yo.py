@@ -32,12 +32,22 @@ class EnsembleKalmanFilter:
         self.macro_state_vector_length = None
         self.micro_state_vector_length = None
         
+        
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():
              if not hasattr(self, k):
                  w = 'EnKF received unexpected {0} attribute.'.format(k) 
                  warns.warn(w, RuntimeWarning)
              setattr(self, k, v)
+             
+        ### set up storage for data history. Macro-history consists of 4 groups
+        ### so thus it is a list with four elements which will be arrays that 
+        ### increase their size with time. 
+        macro_hist_shape = np.zeros(shape=(self.ensemble_size,1))
+        self.macro_history = [macro_hist_shape,
+                              macro_hist_shape,
+                              macro_hist_shape,
+                              macro_hist_shape]
         
         #print(model, model_params)    
         # Set up ensemble of models and other global properties
@@ -188,7 +198,6 @@ class EnsembleKalmanFilter:
         Y = np.zeros(shape=(self.macro_state_vector_length, self.ensemble_size))
         for i in range(self.ensemble_size):
             diff = self.data_ensemble[:, i] - self.H @ self.micro_state_ensemble[:, i]
-            print('this is the diff ', diff)
             X[:, i] = self.micro_state_ensemble[:, i] + self.Kalman_Gain @ diff
             Y[:, i] =  self.H @ X[:, i]
         self.micro_state_ensemble = X
@@ -371,7 +380,14 @@ class EnsembleKalmanFilter:
         ax.legend(frameon = False)
         plt.show()
         
-    def make_fanchart():
+    def record_history(self):
+        ''' saves data over time '''
+        for count, value in enumerate(self.macro_history):
+            x = np.expand_dims(self.macro_state_ensemble[count,:],1)
+            self.macro_history[count] = np.concatenate((value, x), axis = 1)
+        
+    
+    def plot_fanchart(self):
         
         '''make fancharts of model runs over growth rate, average wealth per adult,
         as well as wealth share by group until up to time point
@@ -381,7 +397,35 @@ class EnsembleKalmanFilter:
         colors = ["tab:red", "tab:blue", "grey", "y"]
         wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
         
+        #### Make 4 arrays for all time steps so far for all of the 4 wealth
+        #### groups 
         
+        fig, ax = plt.subplots()
+        for i in range(4):
+            arr =self.macro_history[i][:,1:]  ## without the first column
+            x = np.arange(self.time)
+            print(x,arr)
+            # for the median use `np.median` and change the legend below
+            mean = np.mean(arr, axis=0)
+            offsets = (25,67/2,47.5)
+            ax.plot(x, mean, color='black', lw=3)
+            for offset in offsets:
+                low = np.percentile(arr, 50-offset, axis=0)
+                high = np.percentile(arr, 50+offset, axis=0)
+                # since `offset` will never be bigger than 50, do 55-offset so that
+                # even for the whole range of the graph the fanchart is visible
+                alpha = (55 - offset) / 100
+                ax.fill_between(x, low, high, color=colors[i], alpha=alpha)
+            
+           # ax.plot(df_results[(df_results.iteration == 0) & (df_results.AgentID == 0)]["Step"] +1, 
+        #         lockdown_data1[0]*100,
+         #        linewidth=3 ,label = "data", linestyle= "--", color = "tab:red")
+        
+        ax.set_xlabel("time")
+        ax.set_ylabel("wealth")
+        ax.legend(['Mean'] + [f'Pct{int(2*o)}' for o in offsets] + ['data'], frameon = False)
+        ax.margins(x=0)
+        plt.show()
         '''
         ### PLOT empirical monthly wealth Data (01/1990 to 12/2018) vs model output
         colors = ["tab:red", "tab:blue", "grey", "y"]
@@ -404,6 +448,12 @@ class EnsembleKalmanFilter:
         ax.margins(0)
         '''
         pass
+    
+    def quantify_error():
+        ''' is supposed to quantify the mean prediction error over time for
+        all 4 wealth groups'''
+        
+        pass
 
     def step(self, update: bool):
         
@@ -411,7 +461,8 @@ class EnsembleKalmanFilter:
             raise TypeError
         
         self.update_decision = update ## var to pass on to other methods 
-                                      ## for decision making
+        
+                              ## for decision making
         self.predict()
         self.set_current_obs()
         self.update_state_ensemble()
@@ -420,13 +471,42 @@ class EnsembleKalmanFilter:
         self.make_ensemble_covariance()
         self.make_data_covariance()
         self.make_gain_matrix()
+        self.record_history()
         if update == True: 
             self.state_update()
         #### plot of the macro_state needs to come after state_update() so that
         #### it either includes all 3 (previous, new, observation) state estimates   
         #### or only the non-updated plus obsverational one
         self.plot_macro_state(log_var = "no")
+        self.plot_fanchart()
         if update == True: 
             self.update_models()
             
-        
+'''
+def create_fanchart(arr):
+    x = np.arange(arr.shape[0]) + 1
+    # for the median use `np.median` and change the legend below
+    mean = np.mean(arr, axis=1)
+    offsets = (25,67/2,47.5)
+    fig, ax = plt.subplots()
+    ax.plot(x, mean, color='black', lw=3)
+    for offset in offsets:
+        low = np.percentile(arr, 50-offset, axis=1)
+        high = np.percentile(arr, 50+offset, axis=1)
+        # since `offset` will never be bigger than 50, do 55-offset so that
+        # even for the whole range of the graph the fanchart is visible
+        alpha = (55 - offset) / 100
+        ax.fill_between(x, low, high, color='tab:blue', alpha=alpha)
+    
+    ax.plot(df_results[(df_results.iteration == 0) & (df_results.AgentID == 0)]["Step"] +1, 
+             lockdown_data1[0]*100,
+             linewidth=3 ,label = "data", linestyle= "--", color = "tab:red")
+    
+    ax.set_xlabel("Day of March")
+    ax.set_ylabel("% of countries in lockdown")
+    ax.legend(['Mean'] + [f'Pct{int(2*o)}' for o in offsets] + ['data'], frameon = False)
+    ax.margins(x=0)
+    return fig, ax
+
+'''
+
