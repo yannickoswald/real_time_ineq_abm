@@ -31,6 +31,7 @@ class EnsembleKalmanFilter:
         self.ensemble_size = None
         self.macro_state_vector_length = None
         self.micro_state_vector_length = None
+        self.population_size = None
         
         
         # Get filter attributes from params, warn if unexpected attribute
@@ -39,7 +40,8 @@ class EnsembleKalmanFilter:
                  w = 'EnKF received unexpected {0} attribute.'.format(k) 
                  warns.warn(w, RuntimeWarning)
              setattr(self, k, v)
-             
+        
+        self.population_size = model_params["population_size"]     
         ### set up storage for data history. Macro-history consists of 4 groups
         ### so thus it is a list with four elements which will be arrays that 
         ### increase their size with time. 
@@ -48,6 +50,8 @@ class EnsembleKalmanFilter:
                               macro_hist_shape,
                               macro_hist_shape,
                               macro_hist_shape]
+        
+        self.micro_history = list()
         
         #print(model, model_params)    
         # Set up ensemble of models and other global properties
@@ -110,8 +114,8 @@ class EnsembleKalmanFilter:
     def update_state_ensemble(self):
         """
         Update self.state_ensemble based on the states of the models.
+        Which records the model state as average wealth per adult per wealth group.
         """
-        
         for i in range(self.ensemble_size):
             self.macro_state_ensemble[:, i] = self.models[i].macro_state
             self.micro_state_ensemble[:, i] = self.models[i].micro_state
@@ -385,6 +389,8 @@ class EnsembleKalmanFilter:
         for count, value in enumerate(self.macro_history):
             x = np.expand_dims(self.macro_state_ensemble[count,:],1)
             self.macro_history[count] = np.concatenate((value, x), axis = 1)
+            
+        self.micro_history.append(self.micro_state_ensemble)
         
     
     def plot_fanchart(self):
@@ -400,9 +406,11 @@ class EnsembleKalmanFilter:
         #### Make 4 arrays for all time steps so far for all of the 4 wealth
         #### groups 
         
+        ######## NEED TO RECORD MICROHISTORY AS WELL ###
+        
         fig, ax = plt.subplots()
         for i in range(4):
-            arr =self.macro_history[i][:,1:]  ## without the first column
+            arr = self.macro_history[i][:,1:] ## without the first column
             x = np.arange(self.time)
             print(x,arr)
             # for the median use `np.median` and change the legend below
@@ -416,38 +424,12 @@ class EnsembleKalmanFilter:
                 # even for the whole range of the graph the fanchart is visible
                 alpha = (55 - offset) / 100
                 ax.fill_between(x, low, high, color=colors[i], alpha=alpha)
-            
-           # ax.plot(df_results[(df_results.iteration == 0) & (df_results.AgentID == 0)]["Step"] +1, 
-        #         lockdown_data1[0]*100,
-         #        linewidth=3 ,label = "data", linestyle= "--", color = "tab:red")
-        
         ax.set_xlabel("time")
         ax.set_ylabel("wealth")
         ax.legend(['Mean'] + [f'Pct{int(2*o)}' for o in offsets] + ['data'], frameon = False)
         ax.margins(x=0)
         plt.show()
-        '''
-        ### PLOT empirical monthly wealth Data (01/1990 to 12/2018) vs model output
-        colors = ["tab:red", "tab:blue", "grey", "y"]
-        wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
-        fig, ax = plt.subplots(figsize=(6,4))
-        for i, g in enumerate(wealth_groups): 
-            x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
-            y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
-            x1 = np.linspace(1,time_horizon,time_horizon)
-            y1 = wealth_groups_t_data[i]
-            ax.plot(x,y, label = g, color = colors[i])
-            ax.plot(x1, y1, label = g + ' model', linestyle = '--', color = colors[i])
-            
-        x = x.reset_index(drop=True)
-        ax.set_xticks(x.iloc[0::20].index)
-        ax.set_xticklabels(x.iloc[0::20], rotation = 90)
-        ax.legend(frameon = False, bbox_to_anchor=(0.45, 0.7, 1., .102))
-        ax.set_ylim((-0.05, 1))
-        ax.set_ylabel("Share of wealth")
-        ax.margins(0)
-        '''
-        pass
+
     
     def quantify_error():
         ''' is supposed to quantify the mean prediction error over time for
@@ -482,31 +464,3 @@ class EnsembleKalmanFilter:
         if update == True: 
             self.update_models()
             
-'''
-def create_fanchart(arr):
-    x = np.arange(arr.shape[0]) + 1
-    # for the median use `np.median` and change the legend below
-    mean = np.mean(arr, axis=1)
-    offsets = (25,67/2,47.5)
-    fig, ax = plt.subplots()
-    ax.plot(x, mean, color='black', lw=3)
-    for offset in offsets:
-        low = np.percentile(arr, 50-offset, axis=1)
-        high = np.percentile(arr, 50+offset, axis=1)
-        # since `offset` will never be bigger than 50, do 55-offset so that
-        # even for the whole range of the graph the fanchart is visible
-        alpha = (55 - offset) / 100
-        ax.fill_between(x, low, high, color='tab:blue', alpha=alpha)
-    
-    ax.plot(df_results[(df_results.iteration == 0) & (df_results.AgentID == 0)]["Step"] +1, 
-             lockdown_data1[0]*100,
-             linewidth=3 ,label = "data", linestyle= "--", color = "tab:red")
-    
-    ax.set_xlabel("Day of March")
-    ax.set_ylabel("% of countries in lockdown")
-    ax.legend(['Mean'] + [f'Pct{int(2*o)}' for o in offsets] + ['data'], frameon = False)
-    ax.margins(x=0)
-    return fig, ax
-
-'''
-

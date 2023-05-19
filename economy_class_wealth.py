@@ -59,6 +59,8 @@ class Economy():
         ### sum of wealth
         self.sum_power = self.total_wealth_init()
         ### state-space and data storing 
+        ### the macro state = AVERAGE WEALTH PER ADULT PER GROUP
+        ### the micro state = WEALTH PER EACH AGENT
         self.macro_state = None
         self.micro_state = None
         self.macro_state_vectors = [] ### wealth group data 
