@@ -43,20 +43,17 @@ model_params = {"population_size": num_agents,
 enkf = EnsembleKalmanFilter(Economy, filter_params, model_params)
 print(enkf.micro_state_ensemble)
 print(enkf.macro_state_ensemble)
-time_horizon = 2 ## 29 years * 12 months
+time_horizon = 12*29 ## 29 years * 12 months
 for i in tqdm(range(time_horizon)):
     ### set update to false or true
     if i % 10000 != 0 or i == 0: 
         enkf.step(update = False)
-        #test = enkf.plot_macro_state(log_var = "no")
+        #test = enkf.plot_macro_state(False)
     elif i % 10000 == 0:
-        print(enkf.macro_state_ensemble_old)
         enkf.step(update = True)
-        #enkf.plot_macro_state(log_var = "no")
+
     
-    
-    
-enkf.plot_macro_state(log_var = "no")
+
 enkf.plot_micro_state()
 print(enkf.micro_state_ensemble)
 print(enkf.macro_state_ensemble)
@@ -74,7 +71,7 @@ array_agent_wealth = np.asarray([x.wealth for x in economy.agents])
 plt.hist(array_agent_wealth, bins = 100)
 plt.show()
 
-time_horizon = 2 ## 29 years * 12 months
+time_horizon = 29*12 ## 29 years * 12 months
 for i in tqdm(range(time_horizon)):
     economy.step()
     

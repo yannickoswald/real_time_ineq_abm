@@ -12,8 +12,10 @@ from plot_bivariate_distr import *
 from scipy.stats import powerlognorm
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.ticker import LogFormatterSciNotation
+import matplotlib.ticker as mticker
 
-# Classes
+
 class EnsembleKalmanFilter:
     """
     A class to represent a EnKF for application with a wealth 
@@ -32,16 +34,13 @@ class EnsembleKalmanFilter:
         self.macro_state_vector_length = None
         self.micro_state_vector_length = None
         self.population_size = None
-        
-        
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():
              if not hasattr(self, k):
                  w = 'EnKF received unexpected {0} attribute.'.format(k) 
                  warns.warn(w, RuntimeWarning)
              setattr(self, k, v)
-        
-        self.population_size = model_params["population_size"]     
+              
         ### set up storage for data history. Macro-history consists of 4 groups
         ### so thus it is a list with four elements which will be arrays that 
         ### increase their size with time. 
@@ -50,15 +49,13 @@ class EnsembleKalmanFilter:
                               macro_hist_shape,
                               macro_hist_shape,
                               macro_hist_shape]
-        
+        self.macro_history_share = list()
         self.micro_history = list()
-        
-        #print(model, model_params)    
         # Set up ensemble of models and other global properties
+        self.population_size = model_params["population_size"]    
         self.models = [model(**model_params) for _ in range(self.ensemble_size)]
         shape_macro = (self.macro_state_vector_length, self.ensemble_size)
         shape_micro = (self.micro_state_vector_length, self.ensemble_size)
-        
         self.macro_state_ensemble = np.zeros(shape=shape_macro)
         self.micro_state_ensemble = np.zeros(shape=shape_micro)
         ## fill variable to record previous state estimate sin case of update
@@ -70,23 +67,19 @@ class EnsembleKalmanFilter:
         #### Observation matrix = translation matrix between macro and micro
         #### states
         self.H = self.make_H(self.micro_state_vector_length, 4).T
-        
         self.ensemble_covariance = None
         self.data_ensemble = None 
         self.data_covariance = None
         self.Kalman_Gain = None
         self.state_mean = None
         self.time = 0 
-        
         ### load observation data
         ### LOAD empirical monthly wealth Data sorted by group
         ### for state vector check
         with open('./data/wealth_data_for_import2.csv') as f2:
-            self.data = pd.read_csv(f2, encoding = 'unicode_escape')    
-            
+            self.data = pd.read_csv(f2, encoding = 'unicode_escape')        
         y = model_params["start_year"]
         idx_begin = min((self.data[self.data["year"]==y].index.values))
-        
         self.obs = self.data.iloc[idx_begin::][["year","month",
                                     "real_wealth_per_unit",
                                     "variance_real_wealth"]]
@@ -100,7 +93,6 @@ class EnsembleKalmanFilter:
         """
         for i in range(self.ensemble_size):
             self.models[i].step()
-        self.time = self.models[0].time 
         
     def set_current_obs(self):
         """
@@ -219,7 +211,7 @@ class EnsembleKalmanFilter:
         ##### HERE EACH MODEL ECONOMY NEEDS TO UPDATE ITS OWN INTERNAL AGENT
         ##### STATES 
 
-    def plot_macro_state(self, log_var: str):
+    def plot_macro_state(self, log_var: bool):
         
         '''This method plots the macro state of economy. That is the system state
         estimate at a macro/aggregate level plus the observation for the current time step.
@@ -227,19 +219,23 @@ class EnsembleKalmanFilter:
         different bivariate probability distributions in one plot: 1) previous
         system estimate 2) observation including their uncertainty 3) new estimate'''
         
-        if not isinstance(log_var, str):
+        if not isinstance(log_var, bool):
             raise TypeError
+        
+        
+        ###### TO DO MAKE VAR LABELS CORRECT#####
+
         
         ####################################
         ### prepare system macro-state estimate
         ####################################
-        if log_var == "yes":
+        if log_var == True:
             x = np.log(self.macro_state_ensemble[0,:])
             y = np.log(self.macro_state_ensemble[3,:])
             # Set up grid points for plotting later fed into meshgrid
             x_grid = np.linspace(min(x)*0.9, max(x)*1.1, 100)
             y_grid = np.linspace(min(y)*0.9, max(y)*1.1, 100)
-        elif log_var == "no":
+        elif log_var == False:
             x = self.macro_state_ensemble[0,:]
             y = self.macro_state_ensemble[3,:]
             x_grid = np.linspace(0, max(x)*1.1, 100)
@@ -256,12 +252,12 @@ class EnsembleKalmanFilter:
         ##########################################
         ### prepare observation also on the same plot
         ##########################################
-        if log_var == "yes":
+        if log_var == True:
             x2 = np.log(self.data_ensemble[0,:])
             y2 = np.log(self.data_ensemble[3,:])
             x_grid2 = np.linspace(min(x2)*0.9, max(x2)*1.1, 100)
             y_grid2 = np.linspace(min(y2)*0.9, max(y2)*1.1, 100)
-        elif log_var == "no": 
+        elif log_var == False: 
             x2 = self.data_ensemble[0,:]
             y2 = self.data_ensemble[3,:]
             x_grid2 = np.linspace(0, max(x2)*1.1, 100)
@@ -279,12 +275,12 @@ class EnsembleKalmanFilter:
         ### in case the time step included an EnKF update step
         ##########################################
         if self.update_decision == True: 
-            if log_var == "yes":
+            if log_var == True:
                 x3 = np.log(self.macro_state_ensemble_old[0,:])
                 y3 = np.log(self.macro_state_ensemble_old[3,:])
                 x_grid3 = np.linspace(min(x3)*0.9, max(x3)*1.1, 100)
                 y_grid3 = np.linspace(min(y3)*0.9, max(y3)*1.1, 100)
-            elif log_var == "no":
+            elif log_var == False:
                 x3 = self.macro_state_ensemble_old[0,:]
                 y3 = self.macro_state_ensemble_old[3,:]
                 x_grid3= np.linspace(0, max(x3)*1.1, 100)
@@ -336,7 +332,8 @@ class EnsembleKalmanFilter:
             #if log_var == "yes":
             Z3[Z3<np.mean(Z3)/100] = 0
             ax.contour(X3, Y3, Z3, 6, colors="black", linestyles = 'dotted')
-        
+            
+                
         #ax.contourf(X, Y, Z2, 6, alpha=0.6)
         #Contour levels are a probability density
         ax.clabel(cs,levels = cs.levels, inline=1, fontsize=10)
@@ -344,11 +341,15 @@ class EnsembleKalmanFilter:
         ax.set_ylabel(varname2, fontsize = 14)
         ax.xaxis.set_tick_params(labelsize=12)
         ax.yaxis.set_tick_params(labelsize=12)
-        #ax.set_xticklabels([0, 0.5, 1, 1.5,2,2.5,3,3.5])
-        #ax.xaxis.set_major_formatter(LogFormatterSciNotation(base=10))
-        #ax.yaxis.set_major_formatter(LogFormatterSciNotation(base=10))
+        ax.xaxis.set_major_formatter(mticker.FuncFormatter(
+                lambda x, pos: f'{x/10**np.floor(np.log10(x)):.1f} $\\times 10^{int(np.floor(np.log10(x)))}$' if x > 0 else '0'
+            ))
+        ax.yaxis.set_major_formatter(mticker.FuncFormatter(
+                lambda x, pos: f'{x/10**np.floor(np.log10(x)):.1f} $\\times 10^{int(np.floor(np.log10(x)))}$' if x > 0 else '0'
+            ))
+   
         plt.show()
-        #return X,Y,X2,Y2, Z2
+         #X,Y,X2,Y2, Z2
         
     def plot_micro_state(self):
         
@@ -389,34 +390,49 @@ class EnsembleKalmanFilter:
         for count, value in enumerate(self.macro_history):
             x = np.expand_dims(self.macro_state_ensemble[count,:],1)
             self.macro_history[count] = np.concatenate((value, x), axis = 1)
-            
         self.micro_history.append(self.micro_state_ensemble)
         
-    
-    def plot_fanchart(self):
+    def plot_fanchart(self): 
+        '''make fanchart of model runs over wealth share by group
+        until up to time point where the filter/model is applied to.'''
         
-        '''make fancharts of model runs over growth rate, average wealth per adult,
-        as well as wealth share by group until up to time point
-        where the filter/model is applied to. Similar to current fig 2'''
-        
+        A = None ## placeholder for macro_history as wealth shares
         ### PLOT empirical monthly wealth Data vs model output for chosen time-frame
         colors = ["tab:red", "tab:blue", "grey", "y"]
         wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
+        #### compute total_wealth time series
+        total_wealth_ts = np.zeros(shape=(self.ensemble_size,
+                                          self.time))
+        
+        multipliers = [int(0.01*self.population_size),
+                        int(0.1*self.population_size),
+                        int(0.4*self.population_size),
+                        int(0.5*self.population_size)]
+    
+        for i in range(3):
+            ### here we make the total wealth calculation. top 1% does not need to 
+            ### be counted as it is part of the top 10% hence range(3) and
+            ### idx over i+1 
+            total_wealth_ts += np.multiply(self.macro_history[i+1][:,1:], 
+                                           multipliers[i+1])    
+        
+        for i in range(4):
+            q = np.multiply(self.macro_history[i][:,1:], multipliers[i])
+            p = total_wealth_ts
+            A = np.divide(q, p)  
+            self.macro_history_share.append(A)
         
         #### Make 4 arrays for all time steps so far for all of the 4 wealth
         #### groups 
-        
         ######## NEED TO RECORD MICROHISTORY AS WELL ###
-        
         fig, ax = plt.subplots()
         for i in range(4):
-            arr = self.macro_history[i][:,1:] ## without the first column
-            x = np.arange(self.time)
-            print(x,arr)
+            arr = self.macro_history_share[i][:,1:]  ## without the first column
+            x = np.arange(self.time)[1:]
             # for the median use `np.median` and change the legend below
             mean = np.mean(arr, axis=0)
             offsets = (25,67/2,47.5)
-            ax.plot(x, mean, color='black', lw=3)
+            ax.plot(x, mean, color=colors[i], lw=3)
             for offset in offsets:
                 low = np.percentile(arr, 50-offset, axis=0)
                 high = np.percentile(arr, 50+offset, axis=0)
@@ -426,10 +442,16 @@ class EnsembleKalmanFilter:
                 ax.fill_between(x, low, high, color=colors[i], alpha=alpha)
         ax.set_xlabel("time")
         ax.set_ylabel("wealth")
-        ax.legend(['Mean'] + [f'Pct{int(2*o)}' for o in offsets] + ['data'], frameon = False)
+        ax.set_ylim((0,1))
+        
+        legend_items = ["Top 1%","__ci1","__ci2","__ci3", 
+                        "Top 10%","__ci4","__ci5","__ci6",
+                        "Middle 40%", "__ci7","__ci8","__ci9",
+                        "Bottom 50%", "__ci10","__ci11","__ci12"]
+        ax.legend([f'{o}' for o in legend_items], frameon = False)
         ax.margins(x=0)
         plt.show()
-
+        
     
     def quantify_error():
         ''' is supposed to quantify the mean prediction error over time for
@@ -446,6 +468,7 @@ class EnsembleKalmanFilter:
         
                               ## for decision making
         self.predict()
+        self.time = self.models[0].time
         self.set_current_obs()
         self.update_state_ensemble()
         self.update_state_mean()
@@ -459,8 +482,8 @@ class EnsembleKalmanFilter:
         #### plot of the macro_state needs to come after state_update() so that
         #### it either includes all 3 (previous, new, observation) state estimates   
         #### or only the non-updated plus obsverational one
-        self.plot_macro_state(log_var = "no")
-        self.plot_fanchart()
+        #self.plot_macro_state(log_var = False)
+        #self.plot_fanchart()
         if update == True: 
             self.update_models()
             
