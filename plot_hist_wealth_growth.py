@@ -24,7 +24,7 @@ with open('./data/wealth_data_for_import.csv') as f:
 time_horizon = 46*12
 colors = ["tab:red", "tab:blue", "grey", "y"]
 wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(8,5))
 for i, g in enumerate(wealth_groups): 
     x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[0:561]
     y = d1["real_wealth_growth_rate_per_unit_indexed"][d1["group"] == g].reset_index(drop = True).iloc[0:561]
@@ -35,7 +35,7 @@ for i, g in enumerate(wealth_groups):
 handles, labels = plt.gca().get_legend_handles_labels()
 by_label = dict(zip(labels, handles))
 ax.legend(by_label.values(), by_label.keys(), frameon = False,
-           bbox_to_anchor=(0.85, 0.5, 0.5, 0.5))
+           bbox_to_anchor=(0.75, 0.5, 0.5, 0.5))
 
 x = x.reset_index(drop=True)
 ax.set_xticks(x.iloc[0::20].index)
