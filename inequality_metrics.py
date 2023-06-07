@@ -26,9 +26,6 @@ def find_wealth_groups(agents_list, total_wealth):
     agents_per_next40 = agents_per_percentile*40
     ## number of agents in bottom 50%
     agents_per_bottom50 = agents_per_percentile*50
-    ##### required to compute next 40%
-    ## number of agents in top 30% and bottom 30%
-    agents_per_top30 = agents_per_percentile*30
     
     ### LISTS of WEALTH GROUPS
     top1 = agents_list[:agents_per_top1]
@@ -58,16 +55,17 @@ def find_wealth_groups(agents_list, total_wealth):
         
         
     ### compute average wealth per group
-    average_top1 = top1_wealth / agents_per_top1
-    average_top10 = top10_wealth / agents_per_top10
-    average_next40 = next40_wealth / agents_per_next40
-    average_bottom50 = bottom50_wealth / agents_per_bottom50
+    ### type here must be ensured to float (clarify why?)
+    average_top1 = float(top1_wealth / agents_per_top1)
+    average_top10 = float(top10_wealth / agents_per_top10)
+    average_next40 = float(next40_wealth / agents_per_next40)
+    average_bottom50 = float(bottom50_wealth / agents_per_bottom50)
         
     ### compute wealth shares
-    share_top1 = top1_wealth / total_wealth
-    share_top10 = top10_wealth / total_wealth
-    share_next40 = next40_wealth / total_wealth
-    share_bottom50 = bottom50_wealth / total_wealth
+    share_top1 = float(top1_wealth / total_wealth)
+    share_top10 = float(top10_wealth / total_wealth)
+    share_next40 = float(next40_wealth / total_wealth)
+    share_bottom50 = float(bottom50_wealth / total_wealth)
     
     
     return [[average_top1, average_top10, average_next40, average_bottom50]
@@ -95,10 +93,7 @@ def find_wealth_groups2(values, total_wealth):
     agents_per_next40 = agents_per_percentile*40
     ## number of agents in bottom 50%
     agents_per_bottom50 = agents_per_percentile*50
-    ##### required to compute next 40%
-    ## number of agents in top 30% and bottom 30%
-    agents_per_top30 = agents_per_percentile*30
-    
+
     ### LISTS of WEALTH GROUPS
     top1 = values[:agents_per_top1]
     top10 = values[:agents_per_top10]

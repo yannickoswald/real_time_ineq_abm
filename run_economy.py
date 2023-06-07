@@ -46,10 +46,10 @@ print(enkf.macro_state_ensemble)
 time_horizon = 12*29 ## 29 years * 12 months
 for i in tqdm(range(time_horizon)):
     ### set update to false or true
-    if i % 10000 != 0 or i == 0: 
+    if i % 200 != 0 or i == 0: 
         enkf.step(update = False)
         #test = enkf.plot_macro_state(False)
-    elif i % 10000 == 0:
+    elif i % 200 == 0:
         enkf.step(update = True)
 
     

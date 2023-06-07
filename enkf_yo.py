@@ -9,10 +9,10 @@ import warnings as warns
 import numpy as np
 import pandas as pd
 from plot_bivariate_distr import *  
-from scipy.stats import powerlognorm
+#from scipy.stats import powerlognorm
 import seaborn as sns
 import matplotlib.pyplot as plt
-from matplotlib.ticker import LogFormatterSciNotation
+#from matplotlib.ticker import LogFormatterSciNotation
 import matplotlib.ticker as mticker
 
 
@@ -24,10 +24,23 @@ class EnsembleKalmanFilter:
     def __init__(self, model, filter_params, model_params):
         """
         Initialise the Ensemble Kalman Filter.
-        Params:
-            model
-            filter_params
-            model_params
+        
+        PARAMETERS:
+        - ensemble_size:                      Number of models used in EnKf
+        - macro_state_vector_length:          Corresponds to Number of aggregate wealth groups
+        - micro_state_vector_length:          Corresponds to Number of agents
+        - population_size:                    Number of agents
+        - macro_history:                      Records of wealth group evolution
+        - models:                             The actual agent-based model (objects)
+        - macro_state_ensemble                Stores all wealth group data over all
+                                              distinct ensemble runs
+        - micro_state_ensemble                Stores all agents over all ensemble runs
+        - update_decision                     Binary var recording whether EnKF update
+                                              happens or not
+        - H                                   EnKF observation operator 
+                                              (transforms obs. shape into model prediction shape)
+        - time                                 /
+        - other Kalman params.                 /                                                 
         """
         
         self.ensemble_size = None
@@ -73,16 +86,20 @@ class EnsembleKalmanFilter:
         self.Kalman_Gain = None
         self.state_mean = None
         self.time = 0 
-        ### load observation data
+        ### load observation data from desired start year (y)
         ### LOAD empirical monthly wealth Data sorted by group
         ### for state vector check
         with open('./data/wealth_data_for_import2.csv') as f2:
             self.data = pd.read_csv(f2, encoding = 'unicode_escape')        
         y = model_params["start_year"]
-        idx_begin = min((self.data[self.data["year"]==y].index.values))
-        self.obs = self.data.iloc[idx_begin::][["year","month",
-                                    "real_wealth_per_unit",
-                                    "variance_real_wealth"]]
+        self.idx_begin = min((self.data[self.data["year"]==y].index.values))
+        self.obs = self.data.iloc[self.idx_begin::][["year",
+                                                     "month",
+                                                     "date_short",
+                                                     "group",
+                                                     "real_wealth_share",
+                                                     "real_wealth_per_unit",
+                                                     "variance_real_wealth"]]
     
     def predict(self):
         """
@@ -100,8 +117,8 @@ class EnsembleKalmanFilter:
         in the models as well as the variance of the current observation.
         This is used in the method update_data_ensemble"""
         
-        self.current_obs = self.obs.iloc[self.time*4-4:self.time*4, 2]
-        self.current_obs_var = self.obs.iloc[self.time*4-4:self.time*4, 3]
+        self.current_obs = self.obs.iloc[self.time*4-4:self.time*4, 5]
+        self.current_obs_var = self.obs.iloc[self.time*4-4:self.time*4, 6]
         
     def update_state_ensemble(self):
         """
@@ -221,11 +238,7 @@ class EnsembleKalmanFilter:
         
         if not isinstance(log_var, bool):
             raise TypeError
-        
-        
-        ###### TO DO MAKE VAR LABELS CORRECT#####
-
-        
+            
         ####################################
         ### prepare system macro-state estimate
         ####################################
@@ -349,7 +362,6 @@ class EnsembleKalmanFilter:
             ))
    
         plt.show()
-         #X,Y,X2,Y2, Z2
         
     def plot_micro_state(self):
         
@@ -363,6 +375,7 @@ class EnsembleKalmanFilter:
         for visualization purpose on this kind of distribution.
         https://jakevdp.github.io/blog/2013/12/01/kernel-density-estimation/ 
         """
+        
         fig, ax = plt.subplots()
         ax.set_xlabel("ln(wealth) per agent")
         colors = sns.color_palette("viridis", n_colors=self.ensemble_size)
@@ -401,9 +414,7 @@ class EnsembleKalmanFilter:
         colors = ["tab:red", "tab:blue", "grey", "y"]
         wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
         #### compute total_wealth time series
-        total_wealth_ts = np.zeros(shape=(self.ensemble_size,
-                                          self.time))
-        
+        total_wealth_ts = np.zeros(shape=(self.ensemble_size, self.time))
         multipliers = [int(0.01*self.population_size),
                         int(0.1*self.population_size),
                         int(0.4*self.population_size),
@@ -413,11 +424,14 @@ class EnsembleKalmanFilter:
             ### here we make the total wealth calculation. top 1% does not need to 
             ### be counted as it is part of the top 10% hence range(3) and
             ### idx over i+1 
-            total_wealth_ts += np.multiply(self.macro_history[i+1][:,1:], 
-                                           multipliers[i+1])    
+            m = self.macro_history[i+1][:,1:]
+            n = multipliers[i+1]
+            total_wealth_ts += np.multiply(m,n)    
         
         for i in range(4):
-            q = np.multiply(self.macro_history[i][:,1:], multipliers[i])
+            m = self.macro_history[i][:,1:]
+            n = multipliers[i]
+            q = np.multiply(m, n)
             p = total_wealth_ts
             A = np.divide(q, p)  
             self.macro_history_share.append(A)
@@ -425,10 +439,13 @@ class EnsembleKalmanFilter:
         #### Make 4 arrays for all time steps so far for all of the 4 wealth
         #### groups 
         ######## NEED TO RECORD MICROHISTORY AS WELL ###
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize = (8,6))
+        ### x needs to be set just once
+        ### to the correct length
+        L = np.shape(self.macro_history_share[0][:,1:])[1]
+        x = self.obs["date_short"][::4].reset_index(drop = True).iloc[:L]
         for i in range(4):
             arr = self.macro_history_share[i][:,1:]  ## without the first column
-            x = np.arange(self.time)[1:]
             # for the median use `np.median` and change the legend below
             mean = np.mean(arr, axis=0)
             offsets = (25,67/2,47.5)
@@ -440,15 +457,26 @@ class EnsembleKalmanFilter:
                 # even for the whole range of the graph the fanchart is visible
                 alpha = (55 - offset) / 100
                 ax.fill_between(x, low, high, color=colors[i], alpha=alpha)
-        ax.set_xlabel("time")
-        ax.set_ylabel("wealth")
-        ax.set_ylim((0,1))
+              
+        for i, g in enumerate(wealth_groups):
+            T = self.obs["date_short"][self.obs["group"] == g].reset_index(drop = True)
+            S = self.obs["real_wealth_share"][self.obs["group"] == g].reset_index(drop = True)
+            x = T.iloc[:L]
+            print("This is x ", x)
+            y = S.iloc[:L]        
+            ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
         
+        #ax.set_xlabel("time")
+        ax.set_ylabel("wealth share")
+        ax.set_ylim((0,1))
+        ax.set_xticks(x.iloc[0::20].index)
+        ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         legend_items = ["Top 1%","__ci1","__ci2","__ci3", 
                         "Top 10%","__ci4","__ci5","__ci6",
                         "Middle 40%", "__ci7","__ci8","__ci9",
                         "Bottom 50%", "__ci10","__ci11","__ci12"]
-        ax.legend([f'{o}' for o in legend_items], frameon = False)
+        ax.legend([f'{o}' for o in legend_items],
+                  frameon = False, bbox_to_anchor = (1.25, 0.6), loc='center right')
         ax.margins(x=0)
         plt.show()
         
