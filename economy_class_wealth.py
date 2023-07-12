@@ -100,8 +100,13 @@ class Economy():
                 elif self.start_year == 1990:
                     scale_coeff = 150000
                     a_wealth = powerlognorm.rvs(1.92, 2.08, size=1)*scale_coeff
-            ## create agent
-            agents.append(WealthAgent(i, a_wealth, self, self.economy_beta))
+            ## introduce variable q only for aesthetic purpose
+            q = self.economy_beta + np.random.normal(0, self.economy_beta*0.2)
+            ### truncate distribuion of wealth_share_power of agents a 0
+            if q < 0:
+                q = 0.01
+             ## create agent
+            agents.append(WealthAgent(i, a_wealth, self, q))
         return agents
 
     def grow(self):     

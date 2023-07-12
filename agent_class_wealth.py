@@ -5,7 +5,8 @@ Created on Mon Jan 30 10:57:41 2023
 @author: earyo
 """
 
-
+import numpy as np
+import random
 #%%
 class WealthAgent():
     
@@ -65,7 +66,12 @@ class WealthAgent():
        self.wealth_share = self.wealth / self.economy.economy_wealth
        ### the power that the wealth-share provides so to speak in order to gain new wealth
        ### is a function of beta
-       self.wealth_share_power = (self.wealth**self.beta) / self.economy.sum_power
+       ### make variable z so it is easier to introduce noise to wealth_share_power
+       z = ((self.wealth**self.beta) / self.economy.sum_power )
+       self.wealth_share_power = z + np.random.normal(0, 0.2*z)
+       ### also truncate distribution of it at 0
+       if self.wealth_share_power < 0: 
+           self.wealth_share_power = 0
        
        
     def __repr__(self):

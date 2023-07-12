@@ -512,6 +512,6 @@ class EnsembleKalmanFilter:
         #### or only the non-updated plus obsverational one
         #self.plot_macro_state(log_var = False)
         #self.plot_fanchart()
-        if update == True: 
+        #if update == True: 
             self.update_models()
             
