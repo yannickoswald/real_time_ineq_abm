@@ -12,10 +12,10 @@ import random as random
 from inequality_metrics import find_wealth_groups2
 import numpy as np
 from scipy.stats import powerlognorm
-
+import pandas as pd
 
 class Agent:
-    def __init__(self, id, wealth, model):
+    def __init__(self, id, model):
         self.id = id
         scale_coeff = 150000
         self.wealth = float(powerlognorm.rvs(1.92, 2.08, size=1))*scale_coeff
@@ -34,7 +34,7 @@ class Agent:
                 self.trade(other     = model.graph.nodes[neighbor]["agent"], 
                            concavity = model.concavity)
                 
-        self.wealth = self.wealth * (1 + model.economic_growth)
+        self.wealth = self.wealth * (1 + model.growth_rate)
         self.num_links = self.count_links(model = self.model)
 
     def trade(self, other, concavity):
@@ -61,13 +61,15 @@ class Agent:
         
 
 class Model:
-    def __init__(self, num_agents, initial_wealth, concavity, economic_growth):
+    def __init__(self, num_agents, concavity, growth_rate, start_year):
         self.num_agents = num_agents
-        self.agents = [Agent(i, initial_wealth, self) for i in range(num_agents)]
+        self.agents = [Agent(i, self) for i in range(num_agents)]
         self.graph = self.create_network()
-        self.economic_growth = economic_growth
+        self.growth_rate = growth_rate
         self.wealth_data = list()
         self.concavity = concavity
+        self.start_year = start_year ## doesn't do anything currently
+        self.time = 0
 
     def create_network(self):
         """Create a graph with Barabasi-Albert degree distribution"""
@@ -77,8 +79,7 @@ class Model:
         # Assign agents to nodes
         for i in range(self.num_agents):
             G.nodes[i]["agent"] = self.agents[i]
-        return G
-    
+        return G    
     
     def collect_wealth_data(self):
         """Collect wealth data over time as plot input"""
@@ -86,8 +87,7 @@ class Model:
         for a in self.agents:
             time_step_data.append(a.wealth)
         self.wealth_data.append(time_step_data)
-        
-    
+         
     def step(self):
         """Advance the model by one step"""
         # Randomly order agents and let them act in that order
@@ -95,7 +95,8 @@ class Model:
         for agent in random_order:
             agent.step(self)
             
-        self.collect_wealth_data()   
+        self.collect_wealth_data()
+        self.time = self.time + 1
 
     def plot_network(self):
         """Plot the network of agents"""
@@ -114,8 +115,13 @@ class Model:
         ax.set_xlabel("wealth")
         ax.set_ylabel("frequency")
         
-
     def plot_wealth_groups_over_time(self):
+        
+        ### LOAD empirical monthly wealth Data
+        with open('./data/wealth_data_for_import.csv') as f:
+            d1 = pd.read_csv(f, encoding = 'unicode_escape')
+            
+        colors = ["tab:red", "tab:blue", "grey", "y"]
         labels = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
         groups_over_time = list()
         for i in range(0, len(self.wealth_data)):
@@ -127,19 +133,17 @@ class Model:
         y = np.vstack(groups_over_time)
         x = np.linspace(1, len(y), len(y))
         for i in range(0,4):
-            ax.plot(x, y[:,i], label = labels[i])
+            y2 = d1["real_wealth_share"][d1["group"] == labels[i]].reset_index(drop = True).iloc[168:516]
+            x2 = np.linspace(1, len(y2), len(y2))
+            ax.plot(x2, y2, label = labels[i], color = colors[i], linestyle = "--")
+            ax.plot(x, y[:,i], label = labels[i], color = colors[i])
         ax.set_xlabel("time")
         ax.set_ylabel("wealth share")
         ax.set_ylim((0,1))
         ax.legend()
         
 
+
                    
         
         
-model = Model(500, initial_wealth=100, concavity=0.01, economic_growth = 0.02)  # 100 agents
-for _ in range(360):  # Run for 10 steps
-    model.step()
-model.plot_network()
-model.plot_wealth_histogram()
-test = model.plot_wealth_groups_over_time()
