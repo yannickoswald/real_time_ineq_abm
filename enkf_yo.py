@@ -201,7 +201,6 @@ class EnsembleKalmanFilter:
         does a translation between micro and macro state. And 
         we update the micro-level state vector which is n-
         dimensional based on n-agents.
-        
         """
         ## save previous system state estimate before updating
         self.micro_state_ensemble_old = self.micro_state_ensemble

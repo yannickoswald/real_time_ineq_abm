@@ -48,13 +48,14 @@ for i in tqdm(range(time_horizon)):
     ### set update to false or true
     if i % 100 != 0 or i == 0: 
         enkf.step(update = False)
-        #test = enkf.plot_macro_state(False)
+        test = enkf.plot_macro_state(False)
     elif i % 100 == 0:
         enkf.step(update = True)
 
     
 enkf.plot_fanchart()
 enkf.plot_micro_state()
+enkf.plot_macro_state(log_var = True)
 print(enkf.micro_state_ensemble)
 print(enkf.macro_state_ensemble)
 

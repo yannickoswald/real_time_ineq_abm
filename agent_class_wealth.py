@@ -68,7 +68,7 @@ class WealthAgent():
        ### is a function of beta
        ### make variable z so it is easier to introduce noise to wealth_share_power
        z = ((self.wealth**self.beta) / self.economy.sum_power )
-       self.wealth_share_power = z + np.random.normal(0, 0.2*z)
+       self.wealth_share_power = z #+ np.random.normal(0, 0.2*z)
        ### also truncate distribution of it at 0
        if self.wealth_share_power < 0: 
            self.wealth_share_power = 0

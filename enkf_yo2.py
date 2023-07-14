@@ -42,50 +42,53 @@ class EnsembleKalmanFilter:
         - time                                 /
         - other Kalman params.                 /                                                 
         """
-        
+                
+        self.time = 0
+      
+        # Ensure that model has correct attributes
+        # Should probably make sure that step is callable too
+        if not hasattr(model, 'step'):
+            raise AttributeError("Model has no 'step' method.")
+        if not callable(model.step):
+            raise AttributeError("Model 'step' is not callable.")
+      
+        # Filter attributes - outlines the expected params
+        self.max_iterations = None
         self.ensemble_size = None
-        self.macro_state_vector_length = None
-        self.micro_state_vector_length = None
-        self.population_size = None
+        self.state_vector_length = None
+        self.data_vector_length = None
+        self.H = self.make_H(dim_micro_state, dim_data)
+        self.R_vector = None
+        self.data_covariance = None
+      
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():
-             if not hasattr(self, k):
-                 w = 'EnKF received unexpected {0} attribute.'.format(k) 
-                 warns.warn(w, RuntimeWarning)
-             setattr(self, k, v)
-              
-        ### set up storage for data history. Macro-history consists of 4 groups
-        ### so thus it is a list with four elements which will be arrays that 
-        ### increase their size with time. 
-        macro_hist_shape = np.zeros(shape=(self.ensemble_size,1))
-        self.macro_history = [macro_hist_shape,
-                              macro_hist_shape,
-                              macro_hist_shape,
-                              macro_hist_shape]
-        self.macro_history_share = list()
-        self.micro_history = list()
-        # Set up ensemble of models and other global properties
-        self.population_size = model_params["num_agents"]    
+            if not hasattr(self, k):
+                w = 'EnKF received unexpected {0} attribute.'.format(k) 
+                warns.warn(w, RuntimeWarning)
+            setattr(self, k, v)
+      
+        # Set up ensemble of models
         self.models = [model(**model_params) for _ in range(self.ensemble_size)]
-        shape_macro = (self.macro_state_vector_length, self.ensemble_size)
-        shape_micro = (self.micro_state_vector_length, self.ensemble_size)
-        self.macro_state_ensemble = np.zeros(shape=shape_macro)
-        self.micro_state_ensemble = np.zeros(shape=shape_micro)
-        ## fill variable to record previous state estimate sin case of update
-        self.micro_state_ensemble_old = None
-        self.macro_state_ensemble_old = None
-        ## var to pass on to other methods 
-        ## for decision making
-        self.update_decision = None
-        #### Observation matrix = translation matrix between macro and micro
-        #### states
-        self.H = self.make_H(self.micro_state_vector_length, 4).T
-        self.ensemble_covariance = None
-        self.data_ensemble = None 
-        self.data_covariance = None
-        self.Kalman_Gain = None
-        self.state_mean = None
-        self.time = 0 
+      
+        # Make sure that models have state
+        for m in self.models:
+            if not all(hasattr(m, attr) for attr in ["macro_state", "micro_state"]):
+                raise AttributeError("Model has not sufficient 'state' attributes.")
+      
+        # We're going to need H.T very often, so just do it once and store
+        self.H_transpose = self.H.T
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         ### load observation data from desired start year (y)
         ### LOAD empirical monthly wealth Data sorted by group
         ### for state vector check

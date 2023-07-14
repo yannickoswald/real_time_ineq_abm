@@ -70,6 +70,8 @@ class Model:
         self.concavity = concavity
         self.start_year = start_year ## doesn't do anything currently
         self.time = 0
+        self.macro_state = None
+        self.micro_state = None
 
     def create_network(self):
         """Create a graph with Barabasi-Albert degree distribution"""

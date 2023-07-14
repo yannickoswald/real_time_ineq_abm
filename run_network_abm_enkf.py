@@ -5,6 +5,7 @@ Created on Thu Jul 13 10:43:56 2023
 @author: earyo
 """
 from network_abm import *
+from economy_class_wealth2 import *
 import pandas as pd
 from enkf_yo2 import EnsembleKalmanFilter
 
@@ -27,10 +28,18 @@ filter_params = {"ensemble_size": 10,
 
 model_params = {"num_agents": num_agents,
  "growth_rate": 0.025,
- "concavity": 1.3,
+ "concavity": 0.1,
  "start_year": 1990 }
 
+model_params2 = {"num_agents": num_agents,
+                 "growth_rate": 0.025,
+                 "beta": 1.3,
+                 "distribution": "Pareto_lognormal",
+                 "start_year": 1990}
 
-enkf = EnsembleKalmanFilter(Model, filter_params, model_params)
+
+enkf = EnsembleKalmanFilter(Model, filter_params, model_params = model_params)
+enkf2 = EnsembleKalmanFilter(Economy, filter_params, model_params = model_params2)
+
 
 enkf.plot_fanchart()
