@@ -1,0 +1,12 @@
+name: ineq
+channels:
+  - defaults
+dependencies:
+  - scipy
+  - networkx
+  - seaborn
+  - tqdm
+  - numpy
+  - pandas
+  - matplotlib
+prefix: /home/keiran/miniconda3/envs/ineq
