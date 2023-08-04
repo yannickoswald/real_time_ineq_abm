@@ -85,9 +85,7 @@ class Model:
     
     def collect_wealth_data(self):
         """Collect wealth data over time as plot input"""
-        time_step_data = list()
-        for a in self.agents:
-            time_step_data.append(a.wealth)
+        time_step_data = [a.wealth for a in self.agents]
         self.wealth_data.append(time_step_data)
          
     def step(self):
@@ -110,9 +108,7 @@ class Model:
         
     def plot_wealth_histogram(self):
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (10,10))
-        wealth_data = list()
-        for a in self.agents:
-            wealth_data.append(a.wealth)
+        wealth_data = [a.wealth for a in self.agents]
         ax.hist(wealth_data)
         ax.set_xlabel("wealth")
         ax.set_ylabel("frequency")
