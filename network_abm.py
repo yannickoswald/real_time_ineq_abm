@@ -83,10 +83,9 @@ class Model:
             G.nodes[i]["agent"] = self.agents[i]
         return G    
     
-    def collect_wealth_data(self):
+    def get_wealth_data(self):
         """Collect wealth data over time as plot input"""
-        time_step_data = [a.wealth for a in self.agents]
-        self.wealth_data.append(time_step_data)
+        return [a.wealth for a in self.agents]
          
     def step(self):
         """Advance the model by one step"""
@@ -95,7 +94,8 @@ class Model:
         for agent in random_order:
             agent.step(self)
             
-        self.collect_wealth_data()
+        # Collect wealth data
+        self.wealth_data.append(self.get_wealth_data())
         self.time = self.time + 1
 
     def plot_network(self):
