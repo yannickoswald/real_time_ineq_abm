@@ -17,11 +17,14 @@ import pandas as pd
 class Agent:
     def __init__(self, id, model):
         self.id = id
+        # TODO: Maybe this could be provided to the agent when it is
+        # instantiated in the model?
+        # Or even used as as model parameter?
         scale_coeff = 150000
         self.wealth = float(powerlognorm.rvs(1.92, 2.08, size=1))*scale_coeff
         self.model = model
         ### variable that determines how much an agent is willing to trade/risk
-        self.willingness_to_risk = random.uniform(0,0.1)
+        self.willingness_to_risk = random.uniform(0, 0.1)
         self.num_links = 1
 
     def step(self, model):
@@ -139,9 +142,4 @@ class Model:
         ax.set_ylabel("wealth share")
         ax.set_ylim((0,1))
         ax.legend()
-        
 
-
-                   
-        
-        
