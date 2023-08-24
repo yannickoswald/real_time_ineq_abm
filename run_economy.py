@@ -27,8 +27,9 @@ with open('./data/wealth_data_for_import2.csv') as f2:
 
 
 #%%
+# NM Naming the parameters isn't necessary but makes it easier for me to understand
+economy = Economy(population_size=100, growth_rate=0.025, b_begin=1.3, distribution="Pareto_lognormal", start_year=1990)
 
-economy = Economy(100, 0.025, 1.3, "Pareto_lognormal", 1990)
 ### one-time procedure
 economy.make_agents()
 list_agents = economy.agents

@@ -52,12 +52,14 @@ class Economy():
         ### set economy agents
         self.agents = self.make_agents()
         ### compute total economy wealth bottom up from the level of agents
-        self.economy_wealth = self.total_wealth_init()
+        # NM I think this is quicker/easier than a for loop
+        total_wealth = sum([ x.wealth for x in self.agents])
+        self.economy_wealth = total_wealth
         ### The sum_power is a model parameter which helps calculate the 
         ### normalized wealth share of
         ### an agent given the agent parameter beta. Initialized as the usual 
         ### sum of wealth
-        self.sum_power = self.total_wealth_init()
+        self.sum_power = total_wealth
         ### state-space and data storing 
         ### the macro state = AVERAGE WEALTH PER ADULT PER GROUP
         ### the micro state = WEALTH PER EACH AGENT
@@ -65,17 +67,9 @@ class Economy():
         self.micro_state = None
         self.macro_state_vectors = [] ### wealth group data 
         self.micro_state_vectors = [] ### system state on agent level
-          
-         
-    def total_wealth_init(self):
-        ### computes total wealth in the economy bottom up from agents
-        ### only used during initialization though, as afterwards a global
-        ### growth rate applies to the total wealth of the economy which is then 
-        ### distributed "top down" to the agents
-        sum_wealth = 0
-        for x in self.agents: 
-           sum_wealth += x.wealth
-        return sum_wealth
+        # NM Defining this here just so that we know it exists:
+        self.new_wealth = None
+
         
     def make_agents(self):
         ''' method makes agents dependent on:
@@ -90,7 +84,7 @@ class Economy():
             ### wealth itself.
             ### set distribution from which agents' wealth is sampled initially
             if self.distr == "all_equal":
-                a_wealth = 10000
+                a_wealth = 10000 # NM does this need to change depending on the number of agents?
             elif self.distr == "Pareto_lognormal":
                 ### the scaling_coefficient is determined by fitting the wealth average
                 ### of the sample distr. to the empirical wealth average
@@ -100,6 +94,8 @@ class Economy():
                 elif self.start_year == 1990:
                     scale_coeff = 150000
                     a_wealth = powerlognorm.rvs(1.92, 2.08, size=1)*scale_coeff
+            else:  # NM: throw an error if there is another distribution
+                raise Exception(f"Unrecognised distribution: {self.distr}")
             ## introduce variable q only for aesthetic purpose
             q = self.economy_beta + np.random.normal(0, self.economy_beta*0.2)
             ### truncate distribuion of wealth_share_power of agents a 0
@@ -109,24 +105,30 @@ class Economy():
             agents.append(WealthAgent(i, a_wealth, self, q))
         return agents
 
-    def grow(self):     
-        
+    def grow(self):
         ''' This method represents economic growth. One time step represents
             one month.'''
 
-        self.help_var = self.economy_wealth
+        # NM: ChatGPT spotted this one. As help_var is never used outside of this function there is no need to assign it to the object using 'self'
+        # (broadly it's best to define all object variables in __init__(), otherwise it'll get confusing!)
+        help_var = self.economy_wealth
         self.economy_wealth = self.economy_wealth * (1 + self.growth_rate_economy)
-        self.new_wealth = self.economy_wealth - self.help_var
+        self.new_wealth = self.economy_wealth - help_var
           
     def choose_agent(self):
-        
         ''' This method chooses an agent based on its wealth share subject to 
             the parameter beta which is the exponent/power '''
-        
-        weights = []
-        for x in self.agents: 
-            weights.append(x.wealth_share_power)
-        return random.choices(self.agents, weights, k = 1)
+
+        # NM: nothing wrong with the for loop but I think this is perfect for a list comprehension
+        # (and they are slightly quicker apparently, although I don't know whether this will make
+        # a difference here in practice. I guess that if this is called a lot, and there are a lot
+        # of agents, then the speedup might be noticable)
+        # UPDATE: for what it's worth, ChatGPT says the comprehension wont make any difference in speed
+        # but it is a more pythonic approach
+        weights = [x.wealth_share_power for x in self.agents]
+        #for x in self.agents:
+        #    weights.append()
+        return random.choices(self.agents, weights, k=1)
     
     
     def sum_of_agent_power(self):
@@ -135,15 +137,20 @@ class Economy():
         beta which then overall gives a different sum than the normal wealth. This is 
         important so that the wealth_share_power (i.e. the wealth_share with exponent beta)
         is correctly normalized on the interval [0,1] '''
-        
-        sum_powers = 0
-        for x in self.agents: 
-           sum_powers += x.wealth**x.beta
-        self.sum_power = sum_powers
+
+        # NM again the loop is fine, but list comprehension works well too.
+        # Also I prefer returning a value rather than setting the object variable directly.
+        # I think this makes it easier to test (you can write a test to see what this function returns)
+        # and maybe makes the code clearer? Now in the constructor
+        # you can see explicitly that the sum_power variable is being set.
+        return sum([x.wealth**x.beta for x in self.agents])
+        #sum_powers = 0
+        #for x in self.agents:
+        #   sum_powers += x.wealth**x.beta
+        #self.sum_power = sum_powers
     
     
     def distribute_wealth(self):
-        
         ''' This method chooses an agent each around and distributes all wealth, in n-rounds, 
         where n is the number of wealth-increments (an arbitrary number that has to be chosen
          but we usually set equal to the number of agents, so that there are as
@@ -171,7 +178,7 @@ class Economy():
     
     def step(self): 
         self.time = self.time + 1
-        self.sum_of_agent_power()
+        self.sum_power = self.sum_of_agent_power()
         self.grow()
         self.distribute_wealth()
         self.determine_agent_trajectories()
@@ -194,5 +201,3 @@ class Economy():
         
     def __repr__(self):
         return f"{self.__class__.__name__}('population size: {self.num_agents}'),('economy size: {self.economy_wealth}')"
-        
-        
