@@ -110,6 +110,7 @@ class Model:
         plt.show()
         
     def plot_wealth_histogram(self):
+        # TODO: Do we need subplots here?
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (10,10))
         wealth_data = [a.wealth for a in self.agents]
         ax.hist(wealth_data)
@@ -119,6 +120,9 @@ class Model:
     def plot_wealth_groups_over_time(self):
         
         ### LOAD empirical monthly wealth Data
+        # TODO: I don't think you need this line?
+        # with open('./data/wealth_data_for_import.csv') as f:
+        # I think you can just use `d1 = pd.read_csv(...)`
         with open('./data/wealth_data_for_import.csv') as f:
             d1 = pd.read_csv(f, encoding = 'unicode_escape')
             
@@ -130,6 +134,7 @@ class Model:
                                     sum(self.wealth_data[i]))[1]
             groups_over_time.append(t)
         
+        # TODO: Do we need subplots here?
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (10,10))
         y = np.vstack(groups_over_time)
         x = np.linspace(1, len(y), len(y))
