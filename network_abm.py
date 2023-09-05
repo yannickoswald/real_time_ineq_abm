@@ -17,11 +17,14 @@ import pandas as pd
 class Agent:
     def __init__(self, id, model):
         self.id = id
+        # TODO: Maybe this could be provided to the agent when it is
+        # instantiated in the model?
+        # Or even used as as model parameter?
         scale_coeff = 150000
         self.wealth = float(powerlognorm.rvs(1.92, 2.08, size=1))*scale_coeff
         self.model = model
         ### variable that determines how much an agent is willing to trade/risk
-        self.willingness_to_risk = random.uniform(0,0.1)
+        self.willingness_to_risk = random.uniform(0, 0.1)
         self.num_links = 1
 
     def step(self, model):
@@ -83,12 +86,9 @@ class Model:
             G.nodes[i]["agent"] = self.agents[i]
         return G    
     
-    def collect_wealth_data(self):
+    def get_wealth_data(self):
         """Collect wealth data over time as plot input"""
-        time_step_data = list()
-        for a in self.agents:
-            time_step_data.append(a.wealth)
-        self.wealth_data.append(time_step_data)
+        return [a.wealth for a in self.agents]
          
     def step(self):
         """Advance the model by one step"""
@@ -97,7 +97,8 @@ class Model:
         for agent in random_order:
             agent.step(self)
             
-        self.collect_wealth_data()
+        # Collect wealth data
+        self.wealth_data.append(self.get_wealth_data())
         self.time = self.time + 1
 
     def plot_network(self):
@@ -109,10 +110,9 @@ class Model:
         plt.show()
         
     def plot_wealth_histogram(self):
+        # TODO: Do we need subplots here?
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (10,10))
-        wealth_data = list()
-        for a in self.agents:
-            wealth_data.append(a.wealth)
+        wealth_data = [a.wealth for a in self.agents]
         ax.hist(wealth_data)
         ax.set_xlabel("wealth")
         ax.set_ylabel("frequency")
@@ -120,6 +120,9 @@ class Model:
     def plot_wealth_groups_over_time(self):
         
         ### LOAD empirical monthly wealth Data
+        # TODO: I don't think you need this line?
+        # with open('./data/wealth_data_for_import.csv') as f:
+        # I think you can just use `d1 = pd.read_csv(...)`
         with open('./data/wealth_data_for_import.csv') as f:
             d1 = pd.read_csv(f, encoding = 'unicode_escape')
             
@@ -131,6 +134,7 @@ class Model:
                                     sum(self.wealth_data[i]))[1]
             groups_over_time.append(t)
         
+        # TODO: Do we need subplots here?
         fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (10,10))
         y = np.vstack(groups_over_time)
         x = np.linspace(1, len(y), len(y))
@@ -143,9 +147,4 @@ class Model:
         ax.set_ylabel("wealth share")
         ax.set_ylim((0,1))
         ax.legend()
-        
 
-
-                   
-        
-        
