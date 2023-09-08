@@ -186,8 +186,21 @@ class EnsembleKalmanFilter:
         Should be a (n x 4) matrix since in the state update equation we have
         the n-dim vector (because of n-agents) + the update term which 4 dimensional
         so the Kalman Gain needs to make it (n x 1)
+        micro_state_ensemble should be num_agents x ensemble_size 
+        
         """
-        C = np.cov(self.micro_state_ensemble)
+        
+        #### here the control sequence is implemented to control for ensemble size = 1
+        #### the np.cov fct. then does not correctly interpret the micro_state_vector
+        #### hence in tht case the ensemble size covariance matrix will be 0
+        #### as it should be because there is no sample covariance with a sample of 1
+        if self.ensemble_size == 1:
+            ### squeeze array to get rid of the added column dimension
+            help_array = np.concatenate((self.micro_state_ensemble,self.micro_state_ensemble),1)
+            C = np.cov(help_array)
+            
+        else:
+            C = np.cov(self.micro_state_ensemble)
         state_covariance = self.H @ C @ self.H.T
         diff = state_covariance + self.data_covariance
         self.Kalman_Gain = C @ self.H.T @ np.linalg.inv(diff)
@@ -205,16 +218,27 @@ class EnsembleKalmanFilter:
         ## save previous system state estimate before updating
         self.micro_state_ensemble_old = self.micro_state_ensemble
         self.macro_state_ensemble_old = self.macro_state_ensemble
+        
         ### start update
         X = np.zeros(shape=(self.micro_state_vector_length, self.ensemble_size))
         Y = np.zeros(shape=(self.macro_state_vector_length, self.ensemble_size))
         for i in range(self.ensemble_size):
+            
             diff = self.data_ensemble[:, i] - self.H @ self.micro_state_ensemble[:, i]
+            #print(f'time is {self.time} and this is kalman gain', self.Kalman_Gain)
+            #print(f'time is {self.time} and this is diff', diff)
+            #print(f'time is {self.time} and this is micro_state', self.micro_state_ensemble[:,i])
             X[:, i] = self.micro_state_ensemble[:, i] + self.Kalman_Gain @ diff
+            
             Y[:, i] =  self.H @ X[:, i]
+        #print(f'time is {self.time} and this is X',X)
+        ### error definitely stems from update here and is about values being smaller than 0 because it 
+        #### disappear if this is introduced
+        #### not sure that is a good solutions though
+        X[X < 0] = 0
         self.micro_state_ensemble = X
         self.macro_state_ensemble = Y
-        
+       
     def update_models(self):
         """
         Update individual model states based on state ensemble.
@@ -461,7 +485,6 @@ class EnsembleKalmanFilter:
             T = self.obs["date_short"][self.obs["group"] == g].reset_index(drop = True)
             S = self.obs["real_wealth_share"][self.obs["group"] == g].reset_index(drop = True)
             x = T.iloc[:L]
-            print("This is x ", x)
             y = S.iloc[:L]        
             ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
         
@@ -493,9 +516,9 @@ class EnsembleKalmanFilter:
         
         self.update_decision = update ## var to pass on to other methods 
         
-                              ## for decision making
+                             ##>>>??? for decision making
         self.predict()
-        self.time = self.models[0].time
+        self.time = self.time + 1
         self.set_current_obs()
         self.update_state_ensemble()
         self.update_state_mean()

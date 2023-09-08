@@ -5,9 +5,7 @@ Created on Tue Jan 31 10:58:26 2023
 """
 import os
 import pandas as pd
-import sys
 import numpy as np
-import random
 from tqdm import tqdm  ### package for progress bars
 os.chdir(".")
 import matplotlib.pyplot as plt

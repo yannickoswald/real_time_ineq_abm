@@ -6,13 +6,13 @@ Created on Mon Jan 30 10:57:41 2023
 """
 
 import numpy as np
-import random
+
 #%%
 class WealthAgent():
     
     '''initialization values for agent parameters'''
 
-    def __init__(self, unique_id, wealth_begin, economy, wealth_exponent):
+    def __init__(self, unique_id: int, wealth_begin: float, economy, wealth_exponent: float):
         
        '''
        Initialise Agent class
@@ -44,8 +44,8 @@ class WealthAgent():
        self.unique_id = unique_id
        self.economy = economy
        self.wealth = wealth_begin
-       self.wealth_share = 1 #self.wealth / self.economy.economy_wealth
-       self.wealth_share_power = 1 #self.wealth / self.economy.economy_wealth
+       self.wealth_share = 1 #placeholder value
+       self.wealth_share_power = 1 #placeholder value
        self.beta = wealth_exponent
        self.wealth_growth_rate = 0
        self.wealth_list = []
@@ -60,20 +60,24 @@ class WealthAgent():
             self.g_rate = (self.wealth_list[-1] / self.wealth_list[-2]) - 1
         self.g_rate_list.append(self.g_rate)
 
-
     def determine_wealth_share(self):
        ### actual wealth share
-       self.wealth_share = self.wealth / self.economy.economy_wealth
+       #self.wealth_share = self.wealth / self.economy.economy_wealth
        ### the power that the wealth-share provides so to speak in order to gain new wealth
        ### is a function of beta
-       ### make variable z so it is easier to introduce noise to wealth_share_power
-       z = ((self.wealth**self.beta) / self.economy.sum_power )
-       self.wealth_share_power = z #+ np.random.normal(0, 0.2*z)
+      
+       ### if the agent state is updated it can happen that the agent wealth is less than 0, 
+       ### control for this otherwise the agent wealth weights do not make much sense
+       ### for the selection of an agent to distribute more wealth
+       if self.wealth > 0: 
+           z = ((self.wealth**self.beta) / self.economy.sum_power)
+       else: 
+           z = 0.8
+           
        ### also truncate distribution of it at 0
-       if self.wealth_share_power < 0: 
-           self.wealth_share_power = 0
-       
-       
+       self.wealth_share_power = max(0, z) 
+    
+
     def __repr__(self):
         return f"{self.__class__.__name__}('ID: {self.unique_id}')('wealth: {self.wealth}')"
         

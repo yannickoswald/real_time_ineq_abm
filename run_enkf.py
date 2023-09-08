@@ -29,7 +29,7 @@ with open('./data/wealth_data_for_import2.csv') as f2:
 ### let us say the state vector is the share of wealth 
 ### of 4 wealth groups top 1%, top 10% etc.
 num_agents = 100
-filter_params = {"ensemble_size": 10,
+filter_params = {"ensemble_size": 20,
                  "macro_state_vector_length": 4,
                  "micro_state_vector_length": num_agents}
 
@@ -45,12 +45,14 @@ print(enkf.micro_state_ensemble)
 print(enkf.macro_state_ensemble)
 time_horizon = 12*29 ## 29 years * 12 months
 for i in tqdm(range(time_horizon)):
+    #if i == 1: break 
     ### set update to false or true
     if i % 100 != 0 or i == 0: 
         enkf.step(update = False)
         test = enkf.plot_macro_state(False)
-    elif i % 100 == 0:
+    else:
         enkf.step(update = True)
+        
 
     
 enkf.plot_fanchart()
