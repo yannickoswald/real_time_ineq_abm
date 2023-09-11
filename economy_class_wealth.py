@@ -13,6 +13,7 @@ os.chdir(".")
 from agent_class_wealth import WealthAgent
 from scipy.stats import powerlognorm
 from inequality_metrics import find_wealth_groups
+import pandas as pd
 
 #%%
 
@@ -168,6 +169,47 @@ class Economy():
             x.wealth = self.micro_state[count]
             #assert x.wealth > 0
             #for count, x in enumerate(enkf.models[0].agents): print(count, x, x.wealth,enkf.models[0].micro_state[count])
+    
+    def collect_wealth_data(self):
         
+        ''' Collects macro wealth data for plotting and analysis.'''
+        
+        top1_share_over_time = [x[1][0] for x in self.macro_state_vectors] 
+        top10_share_over_time = [x[1][1] for x in self.macro_state_vectors] 
+        middle40_share_over_time = [x[1][2] for x in self.macro_state_vectors] 
+        bottom50_share_over_time = [x[1][3] for x in self.macro_state_vectors] 
+
+        return [top1_share_over_time,
+                top10_share_over_time,
+                middle40_share_over_time,
+                bottom50_share_over_time]
+        
+    def plot_wealth_groups_over_time(self, ax, period):
+        
+        ''' PLOT empirical monthly wealth Data specified period vs model output'''
+        ### LOAD empirical monthly wealth Data
+        with open('./data/wealth_data_for_import.csv') as f:
+            d1 = pd.read_csv(f, encoding = 'unicode_escape')
+            
+        wealth_groups_t_data = self.collect_wealth_data()
+        ### PLOT empirical monthly wealth Data (01/1990 to 12/2018) vs model output
+        colors = ["tab:red", "tab:blue", "grey", "y"]
+        wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
+        for i, g in enumerate(wealth_groups): 
+            x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
+            y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
+            x1 = np.linspace(1,period,period)
+            y1 = wealth_groups_t_data[i]
+            ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
+            ax.plot(x1, y1, label = g + ' model', linestyle = '-', color = colors[i])
+            
+        x = x.reset_index(drop=True)
+        ax.set_xticks(x.iloc[0::20].index)
+        ax.set_xticklabels(x.iloc[0::20], rotation = 90)
+        #ax1.legend(frameon = False, bbox_to_anchor=(0.45, 0.7, 1., .102))
+        ax.set_ylim((-0.05, 1))
+        ax.set_ylabel("Share of wealth")
+        ax.margins(0)
+
     def __repr__(self):
         return f"{self.__class__.__name__}('population size: {self.num_agents}'),('economy size: {self.economy_wealth}')"

@@ -29,7 +29,7 @@ with open('./data/wealth_data_for_import2.csv') as f2:
 ### let us say the state vector is the share of wealth 
 ### of 4 wealth groups top 1%, top 10% etc.
 num_agents = 100
-filter_params = {"ensemble_size": 20,
+filter_params = {"ensemble_size": 10,
                  "macro_state_vector_length": 4,
                  "micro_state_vector_length": num_agents}
 

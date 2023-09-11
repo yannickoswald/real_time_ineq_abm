@@ -117,34 +117,37 @@ class Model:
         ax.set_xlabel("wealth")
         ax.set_ylabel("frequency")
         
-    def plot_wealth_groups_over_time(self):
-        
+    def plot_wealth_groups_over_time(self, ax):
+        """
+        Plot data on the given axes.
+        """
         ### LOAD empirical monthly wealth Data
-        # TODO: I don't think you need this line?
-        # with open('./data/wealth_data_for_import.csv') as f:
-        # I think you can just use `d1 = pd.read_csv(...)`
+
         with open('./data/wealth_data_for_import.csv') as f:
-            d1 = pd.read_csv(f, encoding = 'unicode_escape')
+            d1 = pd.read_csv(f, encoding = 'unicode_escape')  
+        
+        print(d1)
             
         colors = ["tab:red", "tab:blue", "grey", "y"]
         labels = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
         groups_over_time = list()
         for i in range(0, len(self.wealth_data)):
-            t = find_wealth_groups2(np.array(self.wealth_data[i]),
-                                    sum(self.wealth_data[i]))[1]
+            a = np.array(self.wealth_data[i])
+            b = sum(self.wealth_data[i])
+            t = find_wealth_groups2(a, b)[1]
             groups_over_time.append(t)
-        
-        # TODO: Do we need subplots here?
-        fig, ax = plt.subplots(nrows=1, ncols=1, figsize = (10,10))
         y = np.vstack(groups_over_time)
         x = np.linspace(1, len(y), len(y))
+        
         for i in range(0,4):
-            y2 = d1["real_wealth_share"][d1["group"] == labels[i]].reset_index(drop = True).iloc[168:516]
+            key = d1["group"] == labels[i]
+            y2 = d1["real_wealth_share"][key].reset_index(drop = True).iloc[168:516]
             x2 = np.linspace(1, len(y2), len(y2))
-            ax.plot(x2, y2, label = labels[i], color = colors[i], linestyle = "--")
-            ax.plot(x, y[:,i], label = labels[i], color = colors[i])
+   
+            ax.plot(x2, y2, label = labels[i] + "data", color = colors[i], linestyle = "--")
+            ax.plot(x, y[:,i], label = labels[i] + "model", color = colors[i])
         ax.set_xlabel("time")
-        ax.set_ylabel("wealth share")
+        #ax.set_ylabel("wealth share")
         ax.set_ylim((0,1))
-        ax.legend()
+        ax.legend(loc=(1.05, 0.5))
 
