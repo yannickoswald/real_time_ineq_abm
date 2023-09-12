@@ -37,51 +37,33 @@ from enkf_yo2 import EnsembleKalmanFilter
 
 
 #%% run both base models for fit to the data plot in calibration section
+time_horizon = 29*12 ## 29 years * 12 months
 
-
-model = Model(100, concavity=0.01, growth_rate = 0.02, start_year = 1990)  # 100 agents
-for _ in tqdm(range(360)):  # Run for 10 steps
+model = Model(500,
+              concavity=1,
+              growth_rate = 0.02, 
+              start_year = 1990,
+              adaptive_sensitivity=0.02)  # 100 agents
+for _ in tqdm(range(time_horizon)):  # Run for 10 steps
     model.step()
 model.plot_network()
 model.plot_wealth_histogram()
-#model.plot_wealth_groups_over_time()
-
-
 
 #%%
-# NM Naming the parameters isn't necessary but makes it easier for me to understand
-economy = Economy(population_size=100, growth_rate=0.025, b_begin=1.3, distribution="Pareto_lognormal", start_year=1990)
 
+# NM Naming the parameters isn't necessary but makes it easier for me to understand
+economy = Economy(population_size=500, growth_rate=0.025, b_begin=1.3, distribution="Pareto_lognormal", start_year=1990)
 ### one-time procedure
 economy.make_agents()
 list_agents = economy.agents
 array_agent_wealth = np.asarray([x.wealth for x in economy.agents])
-
-time_horizon = 29*12 ## 29 years * 12 months
 for i in tqdm(range(time_horizon)):
     economy.step()
-    
-#top1_over_time = [x[0][0] for x in data] 
-top1_share_over_time = [x[1][0] for x in economy.macro_state_vectors] 
-top10_share_over_time = [x[1][1] for x in economy.macro_state_vectors] 
-middle40_share_over_time = [x[1][2] for x in economy.macro_state_vectors] 
-bottom50_share_over_time = [x[1][3] for x in economy.macro_state_vectors] 
-
-wealth_groups_t_data = [top1_share_over_time,
-                        top10_share_over_time,
-                        middle40_share_over_time,
-                        bottom50_share_over_time]
-
 
 
 
 #%%    
-
-
-
 fig, (ax1, ax2) = plt.subplots(1, 2)
-
-
 economy.plot_wealth_groups_over_time(ax1, time_horizon)
 model.plot_wealth_groups_over_time(ax2)
 
