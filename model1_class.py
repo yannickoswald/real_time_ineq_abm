@@ -10,14 +10,14 @@ import os
 import numpy as np
 import random
 os.chdir(".")
-from agent_class_wealth import WealthAgent
+from agent1_class import Agent1
 from scipy.stats import powerlognorm
 from inequality_metrics import find_wealth_groups
 import pandas as pd
 
 #%%
 
-class Economy():
+class Model1():
     
     """A model of the wealth distribution in the economy. 
        Wealth is defined as the physical and financial assets someone
@@ -98,7 +98,7 @@ class Economy():
             ## introduce variable q only for aesthetic purpose
             q = self.economy_beta
              ## create agent
-            agents.append(WealthAgent(i, a_wealth, self, q))
+            agents.append(Agent1(i, a_wealth, self, q))
         return agents
 
     def grow(self):
@@ -208,8 +208,10 @@ class Economy():
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         #ax1.legend(frameon = False, bbox_to_anchor=(0.45, 0.7, 1., .102))
         ax.set_ylim((-0.05, 1))
+        ax.set_yticklabels(['0%', '0%', '20%', '40%', '60%', '80%', '100%'])
         ax.set_ylabel("Share of wealth")
         ax.margins(0)
+        ax.text(0,1.05, 'a',  fontsize = 12)
 
     def __repr__(self):
         return f"{self.__class__.__name__}('population size: {self.num_agents}'),('economy size: {self.economy_wealth}')"

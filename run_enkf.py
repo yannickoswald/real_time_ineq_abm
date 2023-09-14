@@ -11,7 +11,7 @@ import random
 from tqdm import tqdm  ### package for progress bars
 os.chdir(".")
 import matplotlib.pyplot as plt
-from economy_class_wealth import Economy
+from model1_class import Model1
 from inequality_metrics import find_wealth_groups
 from enkf_yo import EnsembleKalmanFilter
 
@@ -40,7 +40,7 @@ model_params = {"population_size": num_agents,
  "start_year": 1990 }
 
 
-enkf = EnsembleKalmanFilter(Economy, filter_params, model_params)
+enkf = EnsembleKalmanFilter(Model1, filter_params, model_params)
 print(enkf.micro_state_ensemble)
 print(enkf.macro_state_ensemble)
 time_horizon = 12*29 ## 29 years * 12 months

@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jul 10 10:41:18 2023
-
-@author: earyo
+@author: Yannick Oswald while @University of Leeds, School of Geography 2023
 """
-
 
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -13,66 +10,16 @@ from inequality_metrics import find_wealth_groups2
 import numpy as np
 from scipy.stats import powerlognorm
 import pandas as pd
+from agent2_class import Agent2
 
-class Agent2:
-    def __init__(self, id, model, adaptive_sensitivity):
-        self.id = id
-        scale_coeff = 150000
-        self.wealth = float(powerlognorm.rvs(1.92, 2.08, size=1))*scale_coeff
-        self.model = model
-        ### variable that determines how much an agent is willing to trade/risk
-        self.willingness_to_risk = random.uniform(0, 0.1)
-        self.num_links = 1 ### placeholder only. is calculated in assigned method
-        ### parameter that determines by how many % after a trade an agent
-        ### adjusts their risk preferences
-        self.s = adaptive_sensitivity
-
-    def step(self, model):
-        """Trade with linked agents"""
-        # Count own relationships/links
-        self.num_links = self.count_links(model = self.model)
-        # Get the neighbors of this agent
-        neighbors = [n for n in model.graph.neighbors(self.id)]
-        # Trade with agents that are reachable via a single intermediary
-        for neighbor in neighbors:
-                self.trade(other     = model.graph.nodes[neighbor]["agent"], 
-                           concavity = model.concavity)
-        ## update wealth in line with economy wide economic growth        
-        self.wealth = self.wealth * (1 + model.growth_rate)
-        
-
-    def trade(self, other, concavity):
-        """Perform a trade between this agent and another agent"""
-        # The fraction of wealth to be traded is limited to the wealth of the poorer agent
-        a = self.willingness_to_risk
-        b = other.willingness_to_risk
-        fraction = random.uniform(0, min(a*self.wealth, b*other.wealth))
-        # The probability of winning is proportional to the number of links of the agent
-        self_win_probability = ((self.num_links / (self.num_links + other.num_links))**concavity)# + np.random.normal(0,0.2)
-        print(self_win_probability)
-        if random.random() < self_win_probability:
-            # Self wins the trade
-            self.wealth += fraction
-            other.wealth -= fraction
-            ### cap risk preferences at 10% of own wealth
-            self.willingness_to_risk = min(0.1, self.willingness_to_risk*(1+self.s)) 
-            other.willingness_to_risk = other.willingness_to_risk*(1-other.s)
-        else:
-            # Other wins the trade
-            self.wealth -= fraction
-            other.wealth += fraction
-            self.willingness_to_risk = self.willingness_to_risk*(1-self.s)
-            other.willingness_to_risk = min(0.1, other.willingness_to_risk*(1+other.s))
-            
-    def count_links(self, model):
-        """Count the number of links this agent has"""
-        return len(list(model.graph.neighbors(self.id)))
-        
 
 class Model2:
+    
+    ''' Implements a network-based agent-based model '''
+    
     def __init__(self, num_agents, concavity, growth_rate, start_year, adaptive_sensitivity):
         self.num_agents = num_agents
-        self.agents = [Agent(i, self, adaptive_sensitivity) for i in range(num_agents)]
+        self.agents = [Agent2(i, self, adaptive_sensitivity) for i in range(num_agents)]
         self.graph = self.create_network()
         self.growth_rate = growth_rate
         self.wealth_data = list()
@@ -166,4 +113,3 @@ class Model2:
         ax.legend(loc=(1.05, 0.45), frameon = False)
         ax.margins(0)
         ax.text(0,1.05, 'b', fontsize = 12)
-

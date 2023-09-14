@@ -8,7 +8,7 @@ Created on Mon Jan 30 10:57:41 2023
 import numpy as np
 
 #%%
-class WealthAgent():
+class Agent1():
     
     '''initialization values for agent parameters'''
 

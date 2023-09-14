@@ -9,7 +9,7 @@ import numpy as np
 from tqdm import tqdm  ### package for progress bars
 os.chdir(".")
 import matplotlib.pyplot as plt
-from economy_class_wealth import Economy
+from economy_class_wealth import Model1
 from inequality_metrics import find_wealth_groups
 from enkf_yo import EnsembleKalmanFilter
 
@@ -26,7 +26,7 @@ with open('./data/wealth_data_for_import2.csv') as f2:
 
 #%%
 # NM Naming the parameters isn't necessary but makes it easier for me to understand
-economy = Economy(population_size=100, growth_rate=0.025, b_begin=1.3, distribution="Pareto_lognormal", start_year=1990)
+economy = Model1(population_size=100, growth_rate=0.025, b_begin=1.3, distribution="Pareto_lognormal", start_year=1990)
 
 ### one-time procedure
 economy.make_agents()
@@ -63,8 +63,8 @@ for i, g in enumerate(wealth_groups):
     y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
     x1 = np.linspace(1,time_horizon,time_horizon)
     y1 = wealth_groups_t_data[i]
-    ax.plot(x,y, label = g, color = colors[i])
-    ax.plot(x1, y1, label = g + ' model', linestyle = '--', color = colors[i])
+    ax.plot(x,np.array(y)*100, label = g, color = colors[i])
+    ax.plot(x1, np.array(y1)*100, label = g + ' model', linestyle = '--', color = colors[i])
     
 x = x.reset_index(drop=True)
 ax.set_xticks(x.iloc[0::20].index)
