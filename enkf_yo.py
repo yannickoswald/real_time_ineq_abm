@@ -82,6 +82,7 @@ class EnsembleKalmanFilter:
         self.H = self.make_H(self.micro_state_vector_length, 4).T
         self.ensemble_covariance = None
         self.data_ensemble = None 
+        self.data_ensemble_history = list() ### need this to track and plot observation mean
         self.data_covariance = None
         self.Kalman_Gain = None
         self.state_mean = None
@@ -149,8 +150,8 @@ class EnsembleKalmanFilter:
 
     def make_H(self, dim_micro_state, dim_data):
         
-        ''' This method creates the observation vector. It makes a matrix that 
-        transform the microstate of a model into the macrostate. The micro state is just
+        ''' This method creates the observation operator. It constructs a matrix that 
+        transforms the microstate of a model into the macrostate. The micro state is just
         the ordered (from top to down) wealth of agents and the macrostate the 
         average wealth per top 1%, top10%, next40%, bottom50%. Therefore it is 
         a matrix that sums the normalized agent wealth values so that they yield
@@ -173,12 +174,44 @@ class EnsembleKalmanFilter:
         same length as the data. Second parameter in np.random-normal 
         is standard deviation. Be careful to take square root when
         passing the obs variance.
+        
+        
+        Also, as 2nd task, track history of data ensemble mean i.e.
+        the history of wealth shares given by the 
+        data ensemble/uncertainty (which is different from the actual given data)
+        due to stochasticity.
         """
+        
+        
         x = np.zeros(shape=(len(self.current_obs), self.ensemble_size)) 
         for i in range(self.ensemble_size):
             err = np.random.normal(0, np.sqrt(self.current_obs_var), len(self.current_obs))
+            print('this is the error', err)
             x[:, i] = self.current_obs + err
-        self.data_ensemble = x
+        self.data_ensemble = x   
+        r = np.mean(self.data_ensemble, 1)[:,None] ## r for intermediate result
+        
+        ### compute data ensemble average
+        p = self.population_size
+        pop = np.array([0.01*p,0.1*p,0.4*p,0.5*p])[:, None]
+        r2 = np.multiply(r,pop)
+        d = np.where(r2 > 0)
+        r3 = r2 / np.sum(r2[d])
+        self.data_ensemble_history.append(r3)
+        
+        '''
+        ### use np broadcasting to calculate element-wise total wealth in population segments
+        ## set up population counts
+        p = self.population_size
+        pop = np.array([0.01*p,0.1*p,0.4*p,0.5*p])[:, None]
+        ### calculate total wealth per wealth bracket 
+        r = self.data_ensemble * pop
+        ### calculate mean total wealth per bracket 
+        ### over total wealth in population to arrive at mean wealth share
+        results = np.mean(r,1)/np.sum(np.mean(r,1))
+        self.data_ensemble_history.append(results)
+        '''
+        
         
     def make_gain_matrix(self):
         """
@@ -429,6 +462,7 @@ class EnsembleKalmanFilter:
         self.micro_history.append(self.micro_state_ensemble)
         
     def plot_fanchart(self): 
+        
         '''make fanchart of model runs over wealth share by group
         until up to time point where the filter/model is applied to.'''
         
@@ -481,13 +515,27 @@ class EnsembleKalmanFilter:
                 alpha = (55 - offset) / 100
                 ax.fill_between(x, low, high, color=colors[i], alpha=alpha)
               
+        
+        #### Plot data ensemble history
+        
+        
+        h = np.array(self.data_ensemble_history)
+        for i, g in enumerate(wealth_groups):
+            y = h[:,i]
+            T = self.obs["date_short"][self.obs["group"] == g].reset_index(drop = True)
+            x = T.iloc[:L]
+            #x = np.linspace(1, len(h[i,:]),len(h[i,:]))
+            ax.plot(x,y[1:], label = g, color = colors[i], linestyle = '--')
+            
+            
+
         for i, g in enumerate(wealth_groups):
             T = self.obs["date_short"][self.obs["group"] == g].reset_index(drop = True)
             S = self.obs["real_wealth_share"][self.obs["group"] == g].reset_index(drop = True)
             x = T.iloc[:L]
             y = S.iloc[:L]        
             ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
-        
+
         #ax.set_xlabel("time")
         ax.set_ylabel("wealth share")
         ax.set_ylim((0,1))
