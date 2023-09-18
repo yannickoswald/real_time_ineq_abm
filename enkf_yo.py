@@ -139,8 +139,10 @@ class EnsembleKalmanFilter:
     def make_ensemble_covariance(self):
         """
         Create ensemble covariance matrix.
+        Rowvar determines that the rows are the variables which is true since 
+        rows represent wealth groups and columns different observations thereof.
         """
-        self.ensemble_covariance = np.cov(self.macro_state_ensemble)
+        self.ensemble_covariance = np.cov(self.macro_state_ensemble, rowvar = True)
       
     def make_data_covariance(self):
         """
@@ -175,7 +177,6 @@ class EnsembleKalmanFilter:
         is standard deviation. Be careful to take square root when
         passing the obs variance.
         
-        
         Also, as 2nd task, track history of data ensemble mean i.e.
         the history of wealth shares given by the 
         data ensemble/uncertainty (which is different from the actual given data)
@@ -183,35 +184,33 @@ class EnsembleKalmanFilter:
         """
         
         
+        ''' original Keiran
+        x = np.zeros(shape=(len(data), self.ensemble_size))
+        for i in range(self.ensemble_size):
+            x[:, i] = data + np.random.normal(0, self.R_vector, len(data))
+        self.data_ensemble = x
+        '''
+        
+        ### 1ST TASK
         x = np.zeros(shape=(len(self.current_obs), self.ensemble_size)) 
         for i in range(self.ensemble_size):
             err = np.random.normal(0, np.sqrt(self.current_obs_var), len(self.current_obs))
             print('this is the error', err)
+            print('this is current obs', self.current_obs)
             x[:, i] = self.current_obs + err
         self.data_ensemble = x   
-        r = np.mean(self.data_ensemble, 1)[:,None] ## r for intermediate result
+       
         
-        ### compute data ensemble average
+        ### 2ND TASK
+        ### track history of computed data ensemble average
+        r = np.mean(self.data_ensemble, 1)[:,None] ## r for intermediate result
         p = self.population_size
         pop = np.array([0.01*p,0.1*p,0.4*p,0.5*p])[:, None]
         r2 = np.multiply(r,pop)
         d = np.where(r2 > 0)
         r3 = r2 / np.sum(r2[d])
-        self.data_ensemble_history.append(r3)
-        
-        '''
-        ### use np broadcasting to calculate element-wise total wealth in population segments
-        ## set up population counts
-        p = self.population_size
-        pop = np.array([0.01*p,0.1*p,0.4*p,0.5*p])[:, None]
-        ### calculate total wealth per wealth bracket 
-        r = self.data_ensemble * pop
-        ### calculate mean total wealth per bracket 
-        ### over total wealth in population to arrive at mean wealth share
-        results = np.mean(r,1)/np.sum(np.mean(r,1))
-        self.data_ensemble_history.append(results)
-        '''
-        
+        self.data_ensemble_history.append(r2)
+
         
     def make_gain_matrix(self):
         """
@@ -237,6 +236,14 @@ class EnsembleKalmanFilter:
         state_covariance = self.H @ C @ self.H.T
         diff = state_covariance + self.data_covariance
         self.Kalman_Gain = C @ self.H.T @ np.linalg.inv(diff)
+        
+        
+        '''Keiran version original
+        C = np.cov(self.state_ensemble)
+        state_covariance = self.H @ C @ self.H_transpose
+        diff = state_covariance + self.data_covariance
+        return C @ self.H_transpose @ np.linalg.inv(diff)
+        '''
         
     def state_update(self):
         """
