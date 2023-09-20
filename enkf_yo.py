@@ -195,8 +195,8 @@ class EnsembleKalmanFilter:
         x = np.zeros(shape=(len(self.current_obs), self.ensemble_size)) 
         for i in range(self.ensemble_size):
             err = np.random.normal(0, np.sqrt(self.current_obs_var), len(self.current_obs))
-            print('this is the error', err)
-            print('this is current obs', self.current_obs)
+            #print('this is the error', err)
+            #print('this is current obs', self.current_obs)
             x[:, i] = self.current_obs + err
         self.data_ensemble = x   
        

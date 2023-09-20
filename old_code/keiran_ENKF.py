@@ -166,6 +166,7 @@ class EnsembleKalmanFilter:
         A = self.state_ensemble - 1/self.ensemble_size * a @ b
         return 1/(self.ensemble_size - 1) * A @ A.T
 
+        
     def make_gain_matrix(self):
         """
         Create kalman gain matrix.

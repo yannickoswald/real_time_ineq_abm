@@ -20,20 +20,24 @@ import pandas as pd
 
 with open('./data/wealth_data_for_import.csv') as f:
     d1 = pd.read_csv(f, encoding = 'unicode_escape')  
-
-time_horizon = 46*12
-colors = ["tab:red", "tab:blue", "grey", "y"]
-wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
+    
+colors = ["tab:red", "tab:blue", "grey", "tab:olive"]
+wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
 fig, ax = plt.subplots(figsize=(8,5))
+testx = list()
+testy = list()
 for i, g in enumerate(wealth_groups): 
-    x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[0:561]
-    y = d1["real_wealth_growth_rate_per_unit_indexed"][d1["group"] == g].reset_index(drop = True).iloc[0:561]
-    ax.plot(x,y, label = g, color = colors[i])
+    print(i,g)
+    x = d1["date_full"][d1["group"] == g]##.reset_index(drop = False).iloc[0:568]
+    y = d1["real_wealth_growth_rate_per_unit_indexed"][d1["group"] == g]###.reset_index(drop = False).iloc[0:568]
+    ax.plot(x,y, label = g, color = colors[i], linestyle = '-')
+    testx.append(x)
+    testy.append(y)
+
 ##define labes for plot first plot
 handles, labels = plt.gca().get_legend_handles_labels()
 by_label = dict(zip(labels, handles))
 ax.legend(by_label.values(), by_label.keys(), frameon = False, bbox_to_anchor=(0.75, 0.5, 0.5, 0.5))
-x = x.reset_index(drop=True)
 ax.set_xticks(x.iloc[0::20].index)
 ax.set_xticklabels(x.iloc[0::20], rotation = 90)
 ax.set_ylabel("Wealth growth rate % (ref. = 01/1976)")

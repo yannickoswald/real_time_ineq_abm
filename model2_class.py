@@ -34,7 +34,7 @@ class Model2:
         agent on this graph"""
         # Generate a network with m (desired number of edges each new node should have) = 2
         G = nx.barabasi_albert_graph(self.num_agents, 2)
-        ### sort agents by wealt
+        ### sort agents by wealth
         sorted_agents = sorted(self.agents, key=lambda agent: agent.wealth, reverse=True)
         indices_of_sorted_agents = [a.id for a in sorted_agents]
         ### sort nodes by node degree
