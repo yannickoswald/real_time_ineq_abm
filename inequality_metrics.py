@@ -29,14 +29,14 @@ def find_wealth_groups(agents_list, total_wealth):
     
     ### LISTS of WEALTH GROUPS
     top1 = agents_list[:agents_per_top1]
-    top10 = agents_list[:agents_per_top10]
+    top10_to_top1 = agents_list[agents_per_top1:agents_per_top10]
     next40 = agents_list[agents_per_top10:len(agents_list)-agents_per_bottom50]
     bottom50 = agents_list[agents_per_bottom50:]
     
     ### LOOP OVER ALL LISTS of WEALTH GROUPS AND SUM WEALTH OF AGENTS
     ###initialize values
     top1_wealth = 0
-    top10_wealth = 0
+    top10_to_top1_wealth = 0
     next40_wealth = 0
     bottom50_wealth = 0
     
@@ -46,8 +46,8 @@ def find_wealth_groups(agents_list, total_wealth):
     
     for a in top1:   
         top1_wealth += a.wealth
-    for b in top10:
-        top10_wealth += b.wealth
+    for b in top10_to_top1:
+        top10_to_top1_wealth += b.wealth
     for c in next40:
         next40_wealth += c.wealth
     for d in bottom50:
@@ -57,19 +57,19 @@ def find_wealth_groups(agents_list, total_wealth):
     ### compute average wealth per group
     ### type here must be ensured to float (clarify why?)
     average_top1 = float(top1_wealth / agents_per_top1)
-    average_top10 = float(top10_wealth / agents_per_top10)
+    average_top10_to_top1 = float(top10_to_top1_wealth / (agents_per_top10 - agents_per_top1))
     average_next40 = float(next40_wealth / agents_per_next40)
     average_bottom50 = float(bottom50_wealth / agents_per_bottom50)
         
     ### compute wealth shares
     share_top1 = float(top1_wealth / total_wealth)
-    share_top10 = float(top10_wealth / total_wealth)
+    share_top10_to_top1 = float(top10_to_top1_wealth / total_wealth)
     share_next40 = float(next40_wealth / total_wealth)
     share_bottom50 = float(bottom50_wealth / total_wealth)
     
     
-    return [[average_top1, average_top10, average_next40, average_bottom50]
-            ,[share_top1, share_top10, share_next40, share_bottom50]]
+    return [[average_top1, average_top10_to_top1, average_next40, average_bottom50]
+            ,[share_top1, share_top10_to_top1, share_next40, share_bottom50]]
     
 
 def find_wealth_groups2(values, total_wealth):
@@ -96,14 +96,14 @@ def find_wealth_groups2(values, total_wealth):
 
     ### LISTS of WEALTH GROUPS
     top1 = values[:agents_per_top1]
-    top10 = values[:agents_per_top10]
+    top10_to_top1 = values[agents_per_top1:agents_per_top10]
     next40 = values[agents_per_top10:len(values)-agents_per_bottom50]
     bottom50 = values[agents_per_bottom50:]
     
     ### LOOP OVER ALL LISTS of WEALTH GROUPS AND SUM WEALTH OF AGENTS
     ###initialize values
     top1_wealth = 0
-    top10_wealth = 0
+    top10_to_top1_wealth = 0
     next40_wealth = 0
     bottom50_wealth = 0
     
@@ -113,8 +113,8 @@ def find_wealth_groups2(values, total_wealth):
     
     for a in top1:   
         top1_wealth += a
-    for b in top10:
-        top10_wealth += b
+    for b in top10_to_top1:
+        top10_to_top1_wealth += b
     for c in next40:
         next40_wealth += c
     for d in bottom50:
@@ -122,17 +122,17 @@ def find_wealth_groups2(values, total_wealth):
         
     ### compute average wealth per group
     average_top1 = top1_wealth / agents_per_top1
-    average_top10 = top10_wealth / agents_per_top10
+    average_top10_to_top1 = top10_to_top1_wealth / (agents_per_top10 - agents_per_top1)
     average_next40 = next40_wealth / agents_per_next40
     average_bottom50 = bottom50_wealth / agents_per_bottom50
     
     ### compute wealth shares
     share_top1 = top1_wealth / total_wealth
-    share_top10 = top10_wealth / total_wealth
+    share_top10_to_top1 = top10_to_top1_wealth / total_wealth
     share_next40 = next40_wealth / total_wealth
     share_bottom50 = bottom50_wealth / total_wealth
     
     
-    return [[average_top1, average_top10, average_next40, average_bottom50]
-            ,[share_top1, share_top10, share_next40, share_bottom50]]
+    return [[average_top1, average_top10_to_top1, average_next40, average_bottom50]
+            ,[share_top1, share_top10_to_top1, share_next40, share_bottom50]]
     

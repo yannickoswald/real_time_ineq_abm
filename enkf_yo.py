@@ -163,8 +163,8 @@ class EnsembleKalmanFilter:
         H = np.zeros((dim_micro_state, dim_data))
         L = self.micro_state_vector_length
         H[:int(L*0.01),0] = 1/(L*0.01) ### H entries are normalized
-        H[:int(L*0.1),1] = 1/(L*0.1)
-        H[int(L*0.1):int(L*0.5),2] = 1/(L*0.4)
+        H[int(L*0.01):int(L*0.1),1] = 1/(L*0.09) #next 9%
+        H[int(L*0.1):int(L*0.5),2] = 1/(L*0.4) # next 40%
         H[int(L*0.5):,3] = 1/(L*0.5)
         return H
     
@@ -205,11 +205,11 @@ class EnsembleKalmanFilter:
         ### track history of computed data ensemble average
         r = np.mean(self.data_ensemble, 1)[:,None] ## r for intermediate result
         p = self.population_size
-        pop = np.array([0.01*p,0.1*p,0.4*p,0.5*p])[:, None]
+        pop = np.array([0.01*p,0.09*p,0.4*p,0.5*p])[:, None]
         r2 = np.multiply(r,pop)
         d = np.where(r2 > 0)
         r3 = r2 / np.sum(r2[d])
-        self.data_ensemble_history.append(r2)
+        self.data_ensemble_history.append(r3)
 
         
     def make_gain_matrix(self):
@@ -476,11 +476,11 @@ class EnsembleKalmanFilter:
         A = None ## placeholder for macro_history as wealth shares
         ### PLOT empirical monthly wealth Data vs model output for chosen time-frame
         colors = ["tab:red", "tab:blue", "grey", "y"]
-        wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
+        wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
         #### compute total_wealth time series
         total_wealth_ts = np.zeros(shape=(self.ensemble_size, self.time))
         multipliers = [int(0.01*self.population_size),
-                        int(0.1*self.population_size),
+                        int(0.09*self.population_size),
                         int(0.4*self.population_size),
                         int(0.5*self.population_size)]
     
@@ -521,28 +521,29 @@ class EnsembleKalmanFilter:
                 # even for the whole range of the graph the fanchart is visible
                 alpha = (55 - offset) / 100
                 ax.fill_between(x, low, high, color=colors[i], alpha=alpha)
-              
-        
-        #### Plot data ensemble history
-        
-        
+            
+        #### Plot data ensemble history and actual observations
         h = np.array(self.data_ensemble_history)
         for i, g in enumerate(wealth_groups):
+            ### y variables
             y = h[:,i]
-            T = self.obs["date_short"][self.obs["group"] == g].reset_index(drop = True)
-            x = T.iloc[:L]
-            #x = np.linspace(1, len(h[i,:]),len(h[i,:]))
-            ax.plot(x,y[1:], label = g, color = colors[i], linestyle = '--')
-            
-            
-
-        for i, g in enumerate(wealth_groups):
-            T = self.obs["date_short"][self.obs["group"] == g].reset_index(drop = True)
             S = self.obs["real_wealth_share"][self.obs["group"] == g].reset_index(drop = True)
+            l = S.iloc[:L]
+            ### x variable
+            T = self.obs["date_short"][self.obs["group"] == g].reset_index(drop = True)
             x = T.iloc[:L]
-            y = S.iloc[:L]        
-            ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
-
+            ### plot data ensemble history
+            ax.plot(x,y[1:], label = g, color = colors[i], linestyle = '--')
+            ### plot actual observations
+            ax.plot(x,l, label = g, color = colors[i], linestyle = '.')
+            '''
+        for i, g in enumerate(wealth_groups):
+            S = self.obs["real_wealth_share"][self.obs["group"] == g].reset_index(drop = True)
+            T = self.obs["date_short"][self.obs["group"] == g].reset_index(drop = True)
+            l = S.iloc[:L] 
+            k = T.iloc[:L]
+            ax.plot(k,l, label = g, color = colors[i], linestyle = '--')
+                '''
         #ax.set_xlabel("time")
         ax.set_ylabel("wealth share")
         ax.set_ylim((0,1))

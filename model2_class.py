@@ -85,7 +85,7 @@ class Model2:
         
             
         colors = ["tab:red", "tab:blue", "grey", "y"]
-        wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
+        wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
         groups_over_time = list()
         for i in range(0, len(self.wealth_data)):
             a = np.array(self.wealth_data[i])
@@ -109,7 +109,21 @@ class Model2:
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         ax.get_yaxis().set_visible(False)
-        ax.set_ylim((-0.05,1))
+        ax.set_ylim((-0.05,0.61))
         ax.legend(loc=(1.05, 0.45), frameon = False)
         ax.margins(0)
-        ax.text(0,1.05, 'b', fontsize = 12)
+        ax.text(0,0.65, 'b', fontsize = 12)
+        
+    def write_data_for_plots(self):
+        
+        """
+        Collect data for ensemble plots if not used in ENKF
+        """
+        
+        groups_over_time = list()
+        for i in range(0, len(self.wealth_data)):
+            a = np.array(self.wealth_data[i])
+            b = sum(self.wealth_data[i])
+            t = find_wealth_groups2(a, b)[1]
+            groups_over_time.append(t)
+        return np.vstack(groups_over_time)

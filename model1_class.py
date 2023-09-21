@@ -194,7 +194,7 @@ class Model1():
         wealth_groups_t_data = self.collect_wealth_data()
         ### PLOT empirical monthly wealth Data (01/1990 to 12/2018) vs model output
         colors = ["tab:red", "tab:blue", "grey", "y"]
-        wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
+        wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
         for i, g in enumerate(wealth_groups): 
             x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
             y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
@@ -207,11 +207,20 @@ class Model1():
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         #ax1.legend(frameon = False, bbox_to_anchor=(0.45, 0.7, 1., .102))
-        ax.set_ylim((-0.05, 1))
-        ax.set_yticklabels(['0%', '0%', '20%', '40%', '60%', '80%', '100%'])
+        ax.set_ylim((-0.05, 0.61))
+        ax.set_yticklabels(['0%', '0%', '10%', '20%', '30%', '40%', '50%', '60%'])
         ax.set_ylabel("Share of wealth")
         ax.margins(0)
-        ax.text(0,1.05, 'a',  fontsize = 12)
+        ax.text(0,0.65, 'a',  fontsize = 12)
+        
+        
+    def write_data_for_plots(self):
+        
+        """
+        Collect data for ensemble plots if not used in ENKF
+        """
+        return self.collect_wealth_data()
+
 
     def __repr__(self):
         return f"{self.__class__.__name__}('population size: {self.num_agents}'),('economy size: {self.economy_wealth}')"
