@@ -535,7 +535,7 @@ class EnsembleKalmanFilter:
             ### plot data ensemble history
             ax.plot(x,y[1:], label = g, color = colors[i], linestyle = '--')
             ### plot actual observations
-            ax.plot(x,l, label = g, color = colors[i], linestyle = '.')
+            ax.plot(x,l, label = g, color = colors[i], linestyle = 'dotted')
             '''
         for i, g in enumerate(wealth_groups):
             S = self.obs["real_wealth_share"][self.obs["group"] == g].reset_index(drop = True)
