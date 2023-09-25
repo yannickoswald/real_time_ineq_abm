@@ -51,7 +51,7 @@ for i in tqdm(range(time_horizon)):
         enkf.step(update = False)
         test = enkf.plot_macro_state(False)
     else:
-        enkf.step(update = True)
+        enkf.step(update = False)
     
     
 enkf.plot_fanchart()

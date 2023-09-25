@@ -152,7 +152,7 @@ class EnsembleKalmanFilter:
 
     def make_H(self, dim_micro_state, dim_data):
         
-        ''' This method creates the observation operator. It constructs a matrix that 
+        '''This method creates the observation operator. It constructs a matrix that 
         transforms the microstate of a model into the macrostate. The micro state is just
         the ordered (from top to down) wealth of agents and the macrostate the 
         average wealth per top 1%, top10%, next40%, bottom50%. Therefore it is 
@@ -533,7 +533,7 @@ class EnsembleKalmanFilter:
             T = self.obs["date_short"][self.obs["group"] == g].reset_index(drop = True)
             x = T.iloc[:L]
             ### plot data ensemble history
-            ax.plot(x,y[1:], label = g, color = colors[i], linestyle = '--')
+            #ax.plot(x,y[1:], label = g, color = colors[i], linestyle = '--')
             ### plot actual observations
             ax.plot(x,l, label = g, color = colors[i], linestyle = 'dotted')
             '''
@@ -550,7 +550,7 @@ class EnsembleKalmanFilter:
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         legend_items = ["Top 1%","__ci1","__ci2","__ci3", 
-                        "Top 10%","__ci4","__ci5","__ci6",
+                        "Top 10%-1%","__ci4","__ci5","__ci6",
                         "Middle 40%", "__ci7","__ci8","__ci9",
                         "Bottom 50%", "__ci10","__ci11","__ci12"]
         ax.legend([f'{o}' for o in legend_items],
