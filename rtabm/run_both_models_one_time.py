@@ -8,7 +8,6 @@ Created on Mon Sep 11 13:24:53 2023
 import os
 import numpy as np
 from tqdm import tqdm  ### package for progress bars
-os.chdir("..")
 import matplotlib.pyplot as plt
 ### MODEL 1 infrastructure
 from model1_class import Model1

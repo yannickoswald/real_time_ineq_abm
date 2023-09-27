@@ -8,7 +8,6 @@ In this script we fit a Pareto-lognormal distribution to the wealth distribution
 data in the USA from https://realtimeinequality.org/
 """
 import os
-os.chdir("..")
 #os.chdir("C:/Users/earyo/Dropbox/Arbeit/postdoc_leeds/real_time_ineq_abm")
 from inequality_metrics import find_wealth_groups2
 import numpy as np

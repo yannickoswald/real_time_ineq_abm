@@ -187,6 +187,7 @@ class Model1():
         
         ''' PLOT empirical monthly wealth Data specified period vs model output'''
         ### LOAD empirical monthly wealth Data
+        print(os.getcwd())
         with open(os.path.join('data', 'wealth_data_for_import.csv')) as f:
             d1 = pd.read_csv(f, encoding = 'unicode_escape')
             
