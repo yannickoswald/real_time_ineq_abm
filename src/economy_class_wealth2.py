@@ -10,7 +10,7 @@ import os
 import pandas as pd
 import numpy as np
 import random
-os.chdir(".")
+os.chdir("..")
 from agent_class_wealth import WealthAgent
 from scipy.stats import powerlognorm
 from inequality_metrics import find_wealth_groups

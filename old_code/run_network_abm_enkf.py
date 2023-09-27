@@ -4,10 +4,8 @@ Created on Thu Jul 13 10:43:56 2023
 
 @author: earyo
 """
-from network_abm import *
-from economy_class_wealth2 import *
-import pandas as pd
-from enkf_yo2 import EnsembleKalmanFilter
+from src.economy_class_wealth2 import *
+from src.enkf_yo2 import EnsembleKalmanFilter
 
 model = Model(500, concavity=0.01, growth_rate = 0.02, start_year = 1990)  # 100 agents
 for _ in range(360):  # Run for 10 steps

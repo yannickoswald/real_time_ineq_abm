@@ -133,7 +133,7 @@ class Model2:
         """
         ### LOAD empirical monthly wealth Data
 
-        with open('./data/wealth_data_for_import.csv') as f:
+        with open('../data/wealth_data_for_import.csv') as f:
             d1 = pd.read_csv(f, encoding = 'unicode_escape')  
         
             

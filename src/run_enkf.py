@@ -9,20 +9,20 @@ import sys
 import numpy as np
 import random
 from tqdm import tqdm  ### package for progress bars
-os.chdir(".")
 import matplotlib.pyplot as plt
 from model1_class import Model1
 from inequality_metrics import find_wealth_groups
 from enkf_yo import EnsembleKalmanFilter
 
+print(os.getcwd())
 
 #%%
 ### LOAD empirical monthly wealth Data
-with open('./data/wealth_data_for_import.csv') as f:
+with open(os.path.join('data', 'wealth_data_for_import.csv')) as f:
     d1 = pd.read_csv(f, encoding = 'unicode_escape')
     
 ### LOAD empirical monthly wealth Data sorted by group for state vector check
-with open('./data/wealth_data_for_import2.csv') as f2:
+with open(os.path.join('data', 'wealth_data_for_import2.csv')) as f2:
     d2 = pd.read_csv(f2, encoding = 'unicode_escape')
 #%%
 
@@ -41,10 +41,11 @@ model_params = {"population_size": num_agents,
 
 
 enkf = EnsembleKalmanFilter(Model1, filter_params, model_params)
-print(enkf.micro_state_ensemble)
-print(enkf.macro_state_ensemble)
+print("EnKF micro state ensemble:\n", enkf.micro_state_ensemble)
+print("EnKF macro state ensemble:\n", enkf.macro_state_ensemble)
+
 time_horizon = 12*29 ## 29 years * 12 months
-for i in tqdm(range(time_horizon)):
+for i in tqdm(range(time_horizon), desc="Iterations"):
     #if i == 1: break 
     ### set update to false or true
     if i % 100 != 0 or i == 0: 
@@ -57,8 +58,8 @@ for i in tqdm(range(time_horizon)):
 enkf.plot_fanchart()
 enkf.plot_micro_state()
 enkf.plot_macro_state(log_var = True)
-print(enkf.micro_state_ensemble)
-print(enkf.macro_state_ensemble)
+print("EnKF micro state ensemble:\n", enkf.micro_state_ensemble)
+print("EnKF macro state ensemble:\n", enkf.macro_state_ensemble)
 
 
 
