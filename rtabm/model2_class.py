@@ -3,6 +3,7 @@
 @author: Yannick Oswald while @University of Leeds, School of Geography 2023
 """
 
+import os
 import networkx as nx
 import matplotlib.pyplot as plt
 import random as random
@@ -80,7 +81,7 @@ class Model2:
         """
         ### LOAD empirical monthly wealth Data
 
-        with open('./data/wealth_data_for_import.csv') as f:
+        with open(os.path.join('data', 'wealth_data_for_import.csv')) as f:
             d1 = pd.read_csv(f, encoding = 'unicode_escape')  
         
             

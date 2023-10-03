@@ -9,7 +9,6 @@ Created on Tue Jan 31 09:46:44 2023
 import os
 import numpy as np
 import random
-os.chdir(".")
 from agent1_class import Agent1
 from scipy.stats import powerlognorm
 from inequality_metrics import find_wealth_groups
@@ -188,7 +187,8 @@ class Model1():
         
         ''' PLOT empirical monthly wealth Data specified period vs model output'''
         ### LOAD empirical monthly wealth Data
-        with open('./data/wealth_data_for_import.csv') as f:
+        print(os.getcwd())
+        with open(os.path.join('data', 'wealth_data_for_import.csv')) as f:
             d1 = pd.read_csv(f, encoding = 'unicode_escape')
             
         wealth_groups_t_data = self.collect_wealth_data()
