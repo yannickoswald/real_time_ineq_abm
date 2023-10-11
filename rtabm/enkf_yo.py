@@ -65,12 +65,13 @@ class EnsembleKalmanFilter:
                               macro_hist_shape]
         self.macro_history_share = list()
         self.micro_history = list()
+        self.error_history = list()
         # Set up ensemble of models and other global properties
         self.population_size = model_params["population_size"]    
         self.models = [model(**model_params) for _ in range(self.ensemble_size)]
         shape_macro = (self.macro_state_vector_length, self.ensemble_size)
         shape_micro = (self.micro_state_vector_length, self.ensemble_size)
-        self.macro_state_ensemble = np.zeros(shape=shape_macro)
+        self.macro_state_ensemble = np.zeros(shape=shape_macro) ## per adult wealth per wealth group
         self.micro_state_ensemble = np.zeros(shape=shape_micro)
         ## fill variable to record previous state estimate sin case of update
         self.micro_state_ensemble_old = None
@@ -197,8 +198,6 @@ class EnsembleKalmanFilter:
         x = np.zeros(shape=(len(self.current_obs), self.ensemble_size)) 
         for i in range(self.ensemble_size):
             err = np.random.normal(0, np.sqrt(self.current_obs_var), len(self.current_obs))
-            #print('this is the error', err)
-            #print('this is current obs', self.current_obs)
             x[:, i] = self.current_obs + err
         self.data_ensemble = x   
        
@@ -265,15 +264,9 @@ class EnsembleKalmanFilter:
         X = np.zeros(shape=(self.micro_state_vector_length, self.ensemble_size))
         Y = np.zeros(shape=(self.macro_state_vector_length, self.ensemble_size))
         for i in range(self.ensemble_size):
-            
-            diff = self.data_ensemble[:, i] - self.H @ self.micro_state_ensemble[:, i]
-            #print(f'time is {self.time} and this is kalman gain', self.Kalman_Gain)
-            #print(f'time is {self.time} and this is diff', diff)
-            #print(f'time is {self.time} and this is micro_state', self.micro_state_ensemble[:,i])
+            diff = self.data_ensemble[:, i] - self.H @ self.micro_state_ensemble[:, i] 
             X[:, i] = self.micro_state_ensemble[:, i] + self.Kalman_Gain @ diff
-            
             Y[:, i] =  self.H @ X[:, i]
-        #print(f'time is {self.time} and this is X',X)
         ### error definitely stems from update here and is about values being smaller than 0 because it 
         #### disappear if this is introduced
         #### not sure that is a good solutions though
@@ -437,7 +430,7 @@ class EnsembleKalmanFilter:
         Kernel Density estimation techniques.It has to do so on the log-transform of wealth
         (base e, so natural log) because wealth is per definition in model 
         power-lognormally distributed.The Gaussian, or any other, Kernel does not work well
-        for visualization purpose on this kind of distribution.
+        for visualization purpose on this kind of distribution if untreated.
         https://jakevdp.github.io/blog/2013/12/01/kernel-density-estimation/ 
         """
         
@@ -446,25 +439,16 @@ class EnsembleKalmanFilter:
         colors = sns.color_palette("viridis", n_colors=self.ensemble_size)
         for i in range(self.ensemble_size):
             distr = np.log(self.micro_state_ensemble[:,i])
-            sns.kdeplot(data=distr,
-                        fill=False,
-                        alpha = 0.5,
-                        color = colors[i], 
-                        ax = ax)
+            sns.kdeplot(data=distr, fill=False, alpha = 0.5, color = colors[i], ax = ax)
         mean_log = np.log(np.mean(self.micro_state_ensemble, axis = 1))
-        sns.kdeplot(data=mean_log,
-                    fill=False,
-                    alpha = 1,
-                    color = "black",
-                    lw = 3,
-                    linestyle = "--",
-                    ax = ax,
-                    label = "Mean of microstates")
+        sns.kdeplot(data=mean_log, fill=False, alpha = 1, color = "black", lw = 3, 
+                    linestyle = "--", ax = ax, label = "Mean of microstates")
         ax.legend(frameon = False)
         plt.show()
         
     def record_history(self):
         ''' saves data over time '''
+        
         for count, value in enumerate(self.macro_history):
             x = np.expand_dims(self.macro_state_ensemble[count,:],1)
             self.macro_history[count] = np.concatenate((value, x), axis = 1)
@@ -538,14 +522,7 @@ class EnsembleKalmanFilter:
             #ax.plot(x,y[1:], label = g, color = colors[i], linestyle = '--')
             ### plot actual observations
             ax.plot(x,l, label = g, color = colors[i], linestyle = 'dotted')
-            '''
-        for i, g in enumerate(wealth_groups):
-            S = self.obs["real_wealth_share"][self.obs["group"] == g].reset_index(drop = True)
-            T = self.obs["date_short"][self.obs["group"] == g].reset_index(drop = True)
-            l = S.iloc[:L] 
-            k = T.iloc[:L]
-            ax.plot(k,l, label = g, color = colors[i], linestyle = '--')
-                '''
+
         #ax.set_xlabel("time")
         ax.set_ylabel("wealth share")
         ax.set_ylim((0,1))
@@ -561,11 +538,75 @@ class EnsembleKalmanFilter:
         plt.show()
         
     
-    def quantify_error():
-        ''' is supposed to quantify the mean prediction error over time for
-        all 4 wealth groups'''
+    def quantify_error(self, model_output, data_vector):
         
-        pass
+        """
+        Compute the error metric as the average absolute distance between 
+        the model output and the data vector, averaged across all ensemble members 
+        and the four wealth groups.
+
+        :param model_output: 2D list or numpy array of shape [n, 4]
+            where n is the number of ensemble members.
+        :param data_vector: 1D list or numpy array of shape [4]
+        :return: float, the error metric
+        """
+        
+        # Convert to numpy arrays for easier calculations
+        model_output = np.array(model_output)
+        data_vector = np.array(data_vector)
+        
+        # Ensure dimensions are correct
+        assert model_output.shape[1] == 4, "Model output should have shape [n, 4]"
+        assert len(data_vector) == 4, "Data vector should have shape [4]"
+        
+        # Calculate absolute differences between the model output and data vector
+        abs_diffs = np.abs(model_output - data_vector)
+    
+        # Return the average absolute difference as well as the error per group
+        return abs_diffs, abs_diffs.mean()
+    
+    def record_error(self):
+        """
+        Record the error metric properly applying def quantify_error.
+        Some data transformation has to be conducted beforehand.
+        """
+        ### population numbers per wealth group
+        multipliers = np.array([
+                        int(0.01*self.population_size),
+                        int(0.09*self.population_size),
+                        int(0.4*self.population_size),
+                        int(0.5*self.population_size)],)
+        
+        ### OBSERVATION TRANSFORMATION DATA FORMAT
+        y = np.sum(np.multiply(self.current_obs,multipliers))
+        x =  np.multiply(self.current_obs,multipliers)
+        share_obs = x/y
+    
+        ### MODEL TRANSFORMATION DATA 
+        ### calculate total wealth over population numbers
+        a1 = (self.macro_state_ensemble.T * multipliers).T
+        ### calculate sum of wealth across wealth groups for all ensemble members
+        a2 = np.sum(a1, 0)
+        ### expand array 2
+        a3 = np.tile(a2, (4, 1))
+        ### calculate wealth shares
+        a4 = np.divide(a1, a3)
+        current_error = self.quantify_error(a4.T, share_obs)
+        self.error_history.append(current_error[1])
+        
+        
+    def plot_error(self):
+        
+        ''' this function plots the error over time which is defined as the 
+        difference between "ground truth" and model outputs on average 
+        across all 4 wealth groups and per single wealth group'''
+        
+        L = np.shape(self.macro_history_share[0][:,1:])[1]
+        x = self.obs["date_short"][::4].reset_index(drop = True).iloc[:L]
+        print('x shape ', x.shape)
+        print('this is data shape', np.array(self.error_history).shape)
+        plt.plot(x, np.array(self.error_history)[1:])
+        
 
     def step(self, update: bool):
         
@@ -585,6 +626,8 @@ class EnsembleKalmanFilter:
         self.make_data_covariance()
         self.make_gain_matrix()
         self.record_history()
+        self.record_error()
+        #self.record_error()
         if update == True: 
             self.state_update()
         #### plot of the macro_state needs to come after state_update() so that

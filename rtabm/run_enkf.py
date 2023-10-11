@@ -31,7 +31,7 @@ def prepare_enkf():
     ### let us say the state vector is the share of wealth
     ### of 4 wealth groups top 1%, top 10% etc.
     num_agents = 100
-    filter_params = {"ensemble_size": 20,
+    filter_params = {"ensemble_size": 10,
                      "macro_state_vector_length": 4,
                      "micro_state_vector_length": num_agents}
 
@@ -58,12 +58,13 @@ def run_enkf(enkf):
             enkf.step(update = False)
             test = enkf.plot_macro_state(False)
         else:
-            enkf.step(update = True)
+            enkf.step(update = False)
 
 def plot_enkf(enkf):
     enkf.plot_fanchart()
-    enkf.plot_micro_state()
-    enkf.plot_macro_state(log_var = True)
+    #enkf.plot_micro_state()
+    #enkf.plot_macro_state(log_var = True)
+    enkf.plot_error()
 
 if __name__=="__main__":
     model = prepare_enkf()
