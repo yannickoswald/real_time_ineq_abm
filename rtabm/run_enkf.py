@@ -18,19 +18,20 @@ from enkf_yo import EnsembleKalmanFilter
 def prepare_enkf():
 
     #%%
+    path = ".."
     ### LOAD empirical monthly wealth Data
-    with open(os.path.join('data', 'wealth_data_for_import.csv')) as f:
+    with open(os.path.join(path, 'data', 'wealth_data_for_import.csv')) as f:
         d1 = pd.read_csv(f, encoding = 'unicode_escape')
 
     ### LOAD empirical monthly wealth Data sorted by group for state vector check
-    with open(os.path.join('data', 'wealth_data_for_import2.csv')) as f2:
+    with open(os.path.join(path, 'data', 'wealth_data_for_import2.csv')) as f2:
         d2 = pd.read_csv(f2, encoding = 'unicode_escape')
     #%%
 
     ### let us say the state vector is the share of wealth
     ### of 4 wealth groups top 1%, top 10% etc.
     num_agents = 100
-    filter_params = {"ensemble_size": 10,
+    filter_params = {"ensemble_size": 20,
                      "macro_state_vector_length": 4,
                      "micro_state_vector_length": num_agents}
 
@@ -57,7 +58,7 @@ def run_enkf(enkf):
             enkf.step(update = False)
             test = enkf.plot_macro_state(False)
         else:
-            enkf.step(update = False)
+            enkf.step(update = True)
 
 def plot_enkf(enkf):
     enkf.plot_fanchart()

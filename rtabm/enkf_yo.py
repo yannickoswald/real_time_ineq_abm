@@ -91,7 +91,8 @@ class EnsembleKalmanFilter:
         ### load observation data from desired start year (y)
         ### LOAD empirical monthly wealth Data sorted by group
         ### for state vector check
-        with open(os.path.join('data', 'wealth_data_for_import2.csv')) as f2:
+        path = ".."
+        with open(os.path.join(path, 'data', 'wealth_data_for_import2.csv')) as f2:
             self.data = pd.read_csv(f2, encoding = 'unicode_escape')        
         y = model_params["start_year"]
         self.idx_begin = min((self.data[self.data["year"]==y].index.values))
