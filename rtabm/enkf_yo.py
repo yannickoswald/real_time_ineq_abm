@@ -595,18 +595,30 @@ class EnsembleKalmanFilter:
         self.error_history.append(current_error[1])
         
         
+        
     def plot_error(self):
         
         ''' this function plots the error over time which is defined as the 
         difference between "ground truth" and model outputs on average 
         across all 4 wealth groups and per single wealth group'''
         
+        
+        fig, ax = plt.subplots(figsize=(10,4))
         L = np.shape(self.macro_history_share[0][:,1:])[1]
         x = self.obs["date_short"][::4].reset_index(drop = True).iloc[:L]
-        print('x shape ', x.shape)
-        print('this is data shape', np.array(self.error_history).shape)
-        plt.plot(x, np.array(self.error_history)[1:])
+        ax.plot(x, np.array(self.error_history)[1:])
+        ax.set_xticks(x.iloc[0::20].index)
+        ax.set_xticklabels(x.iloc[0::20], rotation = 90)
+        ax.set_ylabel("error")
         
+        my_array = np.concatenate((x, np.array(self.error_history)[1:]), axis = 1)
+        df = pd.DataFrame(my_array)
+        
+        df.to_csv('error_model1.csv', index=False)
+        
+        
+        
+        ### save error history data
 
     def step(self, update: bool):
         

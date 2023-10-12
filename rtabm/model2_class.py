@@ -80,8 +80,8 @@ class Model2:
         Plot data on the given axes.
         """
         ### LOAD empirical monthly wealth Data
-
-        with open(os.path.join('data', 'wealth_data_for_import.csv')) as f:
+        path = ".."
+        with open(os.path.join(path, 'data', 'wealth_data_for_import.csv')) as f:
             d1 = pd.read_csv(f, encoding = 'unicode_escape')  
         
             
@@ -114,6 +114,7 @@ class Model2:
         ax.legend(loc=(1.05, 0.45), frameon = False)
         ax.margins(0)
         ax.text(0,0.65, 'b', fontsize = 12)
+        return y 
         
     def write_data_for_plots(self):
         

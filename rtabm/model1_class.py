@@ -113,7 +113,6 @@ class Model1():
             the parameter beta which is the exponent/power '''  
         weights = [x.wealth_share_power for x in self.agents]
         self.weightshistory.append(weights)
-        #print(f'the time is {self.time}', weights)
         return random.choices(self.agents, weights, k=1)[0]
 
     def sum_of_agent_power(self):   
@@ -187,8 +186,8 @@ class Model1():
         
         ''' PLOT empirical monthly wealth Data specified period vs model output'''
         ### LOAD empirical monthly wealth Data
-        print(os.getcwd())
-        with open(os.path.join('data', 'wealth_data_for_import.csv')) as f:
+        path = ".."
+        with open(os.path.join(path, 'data', 'wealth_data_for_import.csv')) as f:
             d1 = pd.read_csv(f, encoding = 'unicode_escape')
             
         wealth_groups_t_data = self.collect_wealth_data()
@@ -213,6 +212,10 @@ class Model1():
         ax.margins(0)
         ax.text(0,0.65, 'a',  fontsize = 12)
         
+        ### convert wealth group data to array
+        result_array = np.column_stack([np.array(lst) for lst in wealth_groups_t_data])
+
+        return result_array
         
     def write_data_for_plots(self):
         
