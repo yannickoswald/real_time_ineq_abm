@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jan 31 10:58:26 2023
+Created on Mon Oct 16 13:24:46 2023
+
 @author: earyo
 """
+
 import os
 import pandas as pd
 import sys
@@ -10,9 +12,10 @@ import numpy as np
 import random
 from tqdm import tqdm  ### package for progress bars
 import matplotlib.pyplot as plt
-from model1_class import Model1
+from model2_class import Model2
 from inequality_metrics import find_wealth_groups
-from enkf_yo import EnsembleKalmanFilter
+from enkf_yo2 import EnsembleKalmanFilter2
+
 
 
 def prepare_enkf():
@@ -35,22 +38,22 @@ def prepare_enkf():
                      "macro_state_vector_length": 4,
                      "micro_state_vector_length": num_agents}
 
-    model_params = {"population_size": num_agents,
-     "growth_rate": 0.025,
-     "b_begin": 1.3,
-     "distribution": "Pareto_lognormal",
-     "start_year": 1990 }
-
-
-    enkf = EnsembleKalmanFilter(Model1, filter_params, model_params)
+    model_params = {"population_size": 100, 
+                    "concavity": 1,
+                    "growth_rate": 0.025, 
+                    "start_year": 1990,
+                    "adaptive_sensitivity": 0.02}
+    
+    enkf = EnsembleKalmanFilter2(Model2, filter_params, model_params)
     print("EnKF micro state ensemble:\n", enkf.micro_state_ensemble)
     print("EnKF macro state ensemble:\n", enkf.macro_state_ensemble)
 
     return enkf
 
+
 def run_enkf(enkf):
 
-    time_horizon = 12*29 ## 29 years * 12 months
+    time_horizon = 29*12 ## 29 years * 12 months
     for i in tqdm(range(time_horizon), desc="Iterations"):
         #if i == 1: break
         ### set update to false or true
@@ -58,7 +61,9 @@ def run_enkf(enkf):
             enkf.step(update = False)
             test = enkf.plot_macro_state(False)
         else:
-            enkf.step(update = True)
+            enkf.step(update = False)
+            
+           
 
 def plot_enkf(enkf):
     enkf.plot_fanchart()
@@ -66,13 +71,13 @@ def plot_enkf(enkf):
     #enkf.plot_macro_state(log_var = True)
     enkf.plot_error()
 
+
+
 if __name__=="__main__":
-    model = prepare_enkf()
-    run_enkf(model)
-    plot_enkf(model)
-    print("EnKF micro state ensemble:\n", model.micro_state_ensemble)
-    print("EnKF macro state ensemble:\n", model.macro_state_ensemble)
+    enkf = prepare_enkf()
+    run_enkf(enkf)
+    plot_enkf(enkf)
+    print("EnKF micro state ensemble:\n", enkf.micro_state_ensemble)
+    print("EnKF macro state ensemble:\n", enkf.macro_state_ensemble)
 
 
-
-        

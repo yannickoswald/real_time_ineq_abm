@@ -8,6 +8,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import random as random
 from inequality_metrics import find_wealth_groups2
+from inequality_metrics import find_wealth_groups
 import numpy as np
 from scipy.stats import powerlognorm
 import pandas as pd
@@ -18,9 +19,9 @@ class Model2:
     
     ''' Implements a network-based agent-based model '''
     
-    def __init__(self, num_agents, concavity, growth_rate, start_year, adaptive_sensitivity):
-        self.num_agents = num_agents
-        self.agents = [Agent2(i, self, adaptive_sensitivity) for i in range(num_agents)]
+    def __init__(self, population_size, concavity, growth_rate, start_year, adaptive_sensitivity):
+        self.num_agents = population_size
+        self.agents = [Agent2(i, self, adaptive_sensitivity) for i in range(population_size)]
         self.graph = self.create_network()
         self.growth_rate = growth_rate
         self.wealth_data = list()
@@ -29,6 +30,8 @@ class Model2:
         self.time = 0
         self.macro_state = None
         self.micro_state = None
+        self.macro_state_vectors = [] ### wealth group data 
+        self.micro_state_vectors = [] ### system state on agent level
 
     def create_network(self):
         """Create a graph with Barabasi-Albert degree distribution and place
@@ -49,6 +52,14 @@ class Model2:
         """Collect wealth data over time as plot input"""
         return [a.wealth for a in self.agents]
          
+    def micro_state_vec_data(self):
+        ## two rows because we have w = wealth and wealth change rate as critical variables
+        sv_data = np.zeros((self.num_agents, 2))   
+        for count, x in enumerate(self.agents): 
+            sv_data[count,0] = x.wealth
+            sv_data[count,1] = self.growth_rate ## here growth rate in this model is a global parameter hence no x.growth_rate
+        return sv_data
+    
     def step(self):
         """Advance the model by one step"""
         # Randomly order agents and let them act in that order
@@ -56,9 +67,30 @@ class Model2:
         for agent in random_order:
             agent.step(self)
             
+        # set model state vector at AGENT LEVEL analogous to model 1
+        
+        self.micro_state_vectors.append((self.micro_state_vec_data()))
+        self.micro_state = self.micro_state_vec_data()[:,0]
+        
+        # set model state vector at MACRO LEVEL analogous to model 2
+        wealth_list = self.get_wealth_data()
+        total_wealth = sum(wealth_list)
+        a = find_wealth_groups(self.agents, total_wealth)
+        self.macro_state_vectors.append(a)
+        self.macro_state = np.array(a[0])
+        
         # Collect wealth data
         self.wealth_data.append(self.get_wealth_data())
         self.time = self.time + 1
+        
+    def update_agent_states(self):
+        '''update agent states after EnKF state vector update. Needs 
+        possibly to be verified further to ensure correct running results.'''
+        for count, x in enumerate(self.agents): 
+            x.wealth = self.micro_state[count]
+            #assert x.wealth > 0
+            #for count, x in enumerate(enkf.models[0].agents): print(count, x, x.wealth,enkf.models[0].micro_state[count])
+    
 
     def plot_network(self):
         """Plot the network of agents"""
@@ -84,7 +116,6 @@ class Model2:
         with open(os.path.join(path, 'data', 'wealth_data_for_import.csv')) as f:
             d1 = pd.read_csv(f, encoding = 'unicode_escape')  
         
-            
         colors = ["tab:red", "tab:blue", "grey", "y"]
         wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
         groups_over_time = list()

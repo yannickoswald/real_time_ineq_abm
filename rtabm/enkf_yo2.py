@@ -5,6 +5,7 @@ Created on Tue Apr 25 13:47:43 2023
 @author: earyo
 """
 # Imports
+import os
 import warnings as warns
 import numpy as np
 import pandas as pd
@@ -16,9 +17,9 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
 
-class EnsembleKalmanFilter:
+class EnsembleKalmanFilter2:
     """
-    A class to represent a EnKF for application with a wealth 
+    A class to represent a EnKF for application with a network-based wealth 
     agent-based model for the United States.
     """
     def __init__(self, model, filter_params, model_params):
@@ -42,57 +43,57 @@ class EnsembleKalmanFilter:
         - time                                 /
         - other Kalman params.                 /                                                 
         """
-                
-        self.time = 0
-      
-        # Ensure that model has correct attributes
-        # Should probably make sure that step is callable too
-        if not hasattr(model, 'step'):
-            raise AttributeError("Model has no 'step' method.")
-        if not callable(model.step):
-            raise AttributeError("Model 'step' is not callable.")
-      
-        # Filter attributes - outlines the expected params
-        self.max_iterations = None
+        
         self.ensemble_size = None
-        self.state_vector_length = None
-        self.data_vector_length = None
-        self.H = self.make_H(dim_micro_state, dim_data)
-        self.R_vector = None
-        self.data_covariance = None
-      
+        self.macro_state_vector_length = None
+        self.micro_state_vector_length = None
+        self.population_size = None
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():
-            if not hasattr(self, k):
-                w = 'EnKF received unexpected {0} attribute.'.format(k) 
-                warns.warn(w, RuntimeWarning)
-            setattr(self, k, v)
-      
-        # Set up ensemble of models
+             if not hasattr(self, k):
+                 w = 'EnKF received unexpected {0} attribute.'.format(k) 
+                 warns.warn(w, RuntimeWarning)
+             setattr(self, k, v)
+              
+        ### set up storage for data history. Macro-history consists of 4 groups
+        ### so thus it is a list with four elements which will be arrays that 
+        ### increase their size with time. 
+        macro_hist_shape = np.zeros(shape=(self.ensemble_size,1))
+        self.macro_history = [macro_hist_shape,
+                              macro_hist_shape,
+                              macro_hist_shape,
+                              macro_hist_shape]
+        self.macro_history_share = list()
+        self.micro_history = list()
+        self.error_history = list()
+        # Set up ensemble of models and other global properties
+        self.population_size = model_params["population_size"]    
         self.models = [model(**model_params) for _ in range(self.ensemble_size)]
-      
-        # Make sure that models have state
-        for m in self.models:
-            if not all(hasattr(m, attr) for attr in ["macro_state", "micro_state"]):
-                raise AttributeError("Model has not sufficient 'state' attributes.")
-      
-        # We're going to need H.T very often, so just do it once and store
-        self.H_transpose = self.H.T
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+        shape_macro = (self.macro_state_vector_length, self.ensemble_size)
+        shape_micro = (self.micro_state_vector_length, self.ensemble_size)
+        self.macro_state_ensemble = np.zeros(shape=shape_macro) ## per adult wealth per wealth group
+        self.micro_state_ensemble = np.zeros(shape=shape_micro)
+        ## fill variable to record previous state estimate sin case of update
+        self.micro_state_ensemble_old = None
+        self.macro_state_ensemble_old = None
+        ## var to pass on to other methods 
+        ## for decision making
+        self.update_decision = None
+        #### Observation matrix = translation matrix between macro and micro
+        #### states
+        self.H = self.make_H(self.micro_state_vector_length, 4).T
+        self.ensemble_covariance = None
+        self.data_ensemble = None 
+        self.data_ensemble_history = list() ### need this to track and plot observation mean
+        self.data_covariance = None
+        self.Kalman_Gain = None
+        self.state_mean = None
+        self.time = 0 
         ### load observation data from desired start year (y)
         ### LOAD empirical monthly wealth Data sorted by group
         ### for state vector check
-        with open('../data/wealth_data_for_import2.csv') as f2:
+        path = ".."
+        with open(os.path.join(path, 'data', 'wealth_data_for_import2.csv')) as f2:
             self.data = pd.read_csv(f2, encoding = 'unicode_escape')        
         y = model_params["start_year"]
         self.idx_begin = min((self.data[self.data["year"]==y].index.values))
@@ -141,8 +142,10 @@ class EnsembleKalmanFilter:
     def make_ensemble_covariance(self):
         """
         Create ensemble covariance matrix.
+        Rowvar determines that the rows are the variables which is true since 
+        rows represent wealth groups and columns different observations thereof.
         """
-        self.ensemble_covariance = np.cov(self.macro_state_ensemble)
+        self.ensemble_covariance = np.cov(self.macro_state_ensemble, rowvar = True)
       
     def make_data_covariance(self):
         """
@@ -152,8 +155,8 @@ class EnsembleKalmanFilter:
 
     def make_H(self, dim_micro_state, dim_data):
         
-        ''' This method creates the observation vector. It makes a matrix that 
-        transform the microstate of a model into the macrostate. The micro state is just
+        '''This method creates the observation operator. It constructs a matrix that 
+        transforms the microstate of a model into the macrostate. The micro state is just
         the ordered (from top to down) wealth of agents and the macrostate the 
         average wealth per top 1%, top10%, next40%, bottom50%. Therefore it is 
         a matrix that sums the normalized agent wealth values so that they yield
@@ -163,8 +166,8 @@ class EnsembleKalmanFilter:
         H = np.zeros((dim_micro_state, dim_data))
         L = self.micro_state_vector_length
         H[:int(L*0.01),0] = 1/(L*0.01) ### H entries are normalized
-        H[:int(L*0.1),1] = 1/(L*0.1)
-        H[int(L*0.1):int(L*0.5),2] = 1/(L*0.4)
+        H[int(L*0.01):int(L*0.1),1] = 1/(L*0.09) #next 9%
+        H[int(L*0.1):int(L*0.5),2] = 1/(L*0.4) # next 40%
         H[int(L*0.5):,3] = 1/(L*0.5)
         return H
     
@@ -176,12 +179,39 @@ class EnsembleKalmanFilter:
         same length as the data. Second parameter in np.random-normal 
         is standard deviation. Be careful to take square root when
         passing the obs variance.
+        
+        Also, as 2nd task, track history of data ensemble mean i.e.
+        the history of wealth shares given by the 
+        data ensemble/uncertainty (which is different from the actual given data)
+        due to stochasticity.
         """
+        
+        
+        ''' original Keiran
+        x = np.zeros(shape=(len(data), self.ensemble_size))
+        for i in range(self.ensemble_size):
+            x[:, i] = data + np.random.normal(0, self.R_vector, len(data))
+        self.data_ensemble = x
+        '''
+        
+        ### 1ST TASK
         x = np.zeros(shape=(len(self.current_obs), self.ensemble_size)) 
         for i in range(self.ensemble_size):
             err = np.random.normal(0, np.sqrt(self.current_obs_var), len(self.current_obs))
             x[:, i] = self.current_obs + err
-        self.data_ensemble = x
+        self.data_ensemble = x   
+       
+        
+        ### 2ND TASK
+        ### track history of computed data ensemble average
+        r = np.mean(self.data_ensemble, 1)[:,None] ## r for intermediate result
+        p = self.population_size
+        pop = np.array([0.01*p,0.09*p,0.4*p,0.5*p])[:, None]
+        r2 = np.multiply(r,pop)
+        d = np.where(r2 > 0)
+        r3 = r2 / np.sum(r2[d])
+        self.data_ensemble_history.append(r3)
+
         
     def make_gain_matrix(self):
         """
@@ -189,11 +219,32 @@ class EnsembleKalmanFilter:
         Should be a (n x 4) matrix since in the state update equation we have
         the n-dim vector (because of n-agents) + the update term which 4 dimensional
         so the Kalman Gain needs to make it (n x 1)
+        micro_state_ensemble should be num_agents x ensemble_size 
+        
         """
-        C = np.cov(self.micro_state_ensemble)
+        
+        #### here the control sequence is implemented to control for ensemble size = 1
+        #### the np.cov fct. then does not correctly interpret the micro_state_vector
+        #### hence in tht case the ensemble size covariance matrix will be 0
+        #### as it should be because there is no sample covariance with a sample of 1
+        if self.ensemble_size == 1:
+            ### squeeze array to get rid of the added column dimension
+            help_array = np.concatenate((self.micro_state_ensemble,self.micro_state_ensemble),1)
+            C = np.cov(help_array)
+            
+        else:
+            C = np.cov(self.micro_state_ensemble)
         state_covariance = self.H @ C @ self.H.T
         diff = state_covariance + self.data_covariance
         self.Kalman_Gain = C @ self.H.T @ np.linalg.inv(diff)
+        
+        
+        '''Keiran version original
+        C = np.cov(self.state_ensemble)
+        state_covariance = self.H @ C @ self.H_transpose
+        diff = state_covariance + self.data_covariance
+        return C @ self.H_transpose @ np.linalg.inv(diff)
+        '''
         
     def state_update(self):
         """
@@ -204,21 +255,25 @@ class EnsembleKalmanFilter:
         does a translation between micro and macro state. And 
         we update the micro-level state vector which is n-
         dimensional based on n-agents.
-        
         """
         ## save previous system state estimate before updating
         self.micro_state_ensemble_old = self.micro_state_ensemble
         self.macro_state_ensemble_old = self.macro_state_ensemble
+        
         ### start update
         X = np.zeros(shape=(self.micro_state_vector_length, self.ensemble_size))
         Y = np.zeros(shape=(self.macro_state_vector_length, self.ensemble_size))
         for i in range(self.ensemble_size):
-            diff = self.data_ensemble[:, i] - self.H @ self.micro_state_ensemble[:, i]
+            diff = self.data_ensemble[:, i] - self.H @ self.micro_state_ensemble[:, i] 
             X[:, i] = self.micro_state_ensemble[:, i] + self.Kalman_Gain @ diff
             Y[:, i] =  self.H @ X[:, i]
+        ### error definitely stems from update here and is about values being smaller than 0 because it 
+        #### disappear if this is introduced
+        #### not sure that is a good solutions though
+        X[X < 0] = 0
         self.micro_state_ensemble = X
         self.macro_state_ensemble = Y
-        
+       
     def update_models(self):
         """
         Update individual model states based on state ensemble.
@@ -375,7 +430,7 @@ class EnsembleKalmanFilter:
         Kernel Density estimation techniques.It has to do so on the log-transform of wealth
         (base e, so natural log) because wealth is per definition in model 
         power-lognormally distributed.The Gaussian, or any other, Kernel does not work well
-        for visualization purpose on this kind of distribution.
+        for visualization purpose on this kind of distribution if untreated.
         https://jakevdp.github.io/blog/2013/12/01/kernel-density-estimation/ 
         """
         
@@ -384,42 +439,34 @@ class EnsembleKalmanFilter:
         colors = sns.color_palette("viridis", n_colors=self.ensemble_size)
         for i in range(self.ensemble_size):
             distr = np.log(self.micro_state_ensemble[:,i])
-            sns.kdeplot(data=distr,
-                        fill=False,
-                        alpha = 0.5,
-                        color = colors[i], 
-                        ax = ax)
+            sns.kdeplot(data=distr, fill=False, alpha = 0.5, color = colors[i], ax = ax)
         mean_log = np.log(np.mean(self.micro_state_ensemble, axis = 1))
-        sns.kdeplot(data=mean_log,
-                    fill=False,
-                    alpha = 1,
-                    color = "black",
-                    lw = 3,
-                    linestyle = "--",
-                    ax = ax,
-                    label = "Mean of microstates")
+        sns.kdeplot(data=mean_log, fill=False, alpha = 1, color = "black", lw = 3, 
+                    linestyle = "--", ax = ax, label = "Mean of microstates")
         ax.legend(frameon = False)
         plt.show()
         
     def record_history(self):
         ''' saves data over time '''
+        
         for count, value in enumerate(self.macro_history):
             x = np.expand_dims(self.macro_state_ensemble[count,:],1)
             self.macro_history[count] = np.concatenate((value, x), axis = 1)
         self.micro_history.append(self.micro_state_ensemble)
         
     def plot_fanchart(self): 
+        
         '''make fanchart of model runs over wealth share by group
         until up to time point where the filter/model is applied to.'''
         
         A = None ## placeholder for macro_history as wealth shares
         ### PLOT empirical monthly wealth Data vs model output for chosen time-frame
         colors = ["tab:red", "tab:blue", "grey", "y"]
-        wealth_groups = ["Top 1%", "Top 10%", "Middle 40%", "Bottom 50%"]
+        wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
         #### compute total_wealth time series
         total_wealth_ts = np.zeros(shape=(self.ensemble_size, self.time))
         multipliers = [int(0.01*self.population_size),
-                        int(0.1*self.population_size),
+                        int(0.09*self.population_size),
                         int(0.4*self.population_size),
                         int(0.5*self.population_size)]
     
@@ -460,22 +507,29 @@ class EnsembleKalmanFilter:
                 # even for the whole range of the graph the fanchart is visible
                 alpha = (55 - offset) / 100
                 ax.fill_between(x, low, high, color=colors[i], alpha=alpha)
-              
+            
+        #### Plot data ensemble history and actual observations
+        h = np.array(self.data_ensemble_history)
         for i, g in enumerate(wealth_groups):
-            T = self.obs["date_short"][self.obs["group"] == g].reset_index(drop = True)
+            ### y variables
+            y = h[:,i]
             S = self.obs["real_wealth_share"][self.obs["group"] == g].reset_index(drop = True)
+            l = S.iloc[:L]
+            ### x variable
+            T = self.obs["date_short"][self.obs["group"] == g].reset_index(drop = True)
             x = T.iloc[:L]
-            print("This is x ", x)
-            y = S.iloc[:L]        
-            ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
-        
+            ### plot data ensemble history
+            #ax.plot(x,y[1:], label = g, color = colors[i], linestyle = '--')
+            ### plot actual observations
+            ax.plot(x,l, label = g, color = colors[i], linestyle = 'dotted')
+
         #ax.set_xlabel("time")
         ax.set_ylabel("wealth share")
         ax.set_ylim((0,1))
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         legend_items = ["Top 1%","__ci1","__ci2","__ci3", 
-                        "Top 10%","__ci4","__ci5","__ci6",
+                        "Top 10%-1%","__ci4","__ci5","__ci6",
                         "Middle 40%", "__ci7","__ci8","__ci9",
                         "Bottom 50%", "__ci10","__ci11","__ci12"]
         ax.legend([f'{o}' for o in legend_items],
@@ -484,11 +538,91 @@ class EnsembleKalmanFilter:
         plt.show()
         
     
-    def quantify_error():
-        ''' is supposed to quantify the mean prediction error over time for
-        all 4 wealth groups'''
+    def quantify_error(self, model_output, data_vector):
         
-        pass
+        """
+        Compute the error metric as the average absolute distance between 
+        the model output and the data vector, averaged across all ensemble members 
+        and the four wealth groups.
+
+        :param model_output: 2D list or numpy array of shape [n, 4]
+            where n is the number of ensemble members.
+        :param data_vector: 1D list or numpy array of shape [4]
+        :return: float, the error metric
+        """
+        
+        # Convert to numpy arrays for easier calculations
+        model_output = np.array(model_output)
+        data_vector = np.array(data_vector)
+        
+        # Ensure dimensions are correct
+        assert model_output.shape[1] == 4, "Model output should have shape [n, 4]"
+        assert len(data_vector) == 4, "Data vector should have shape [4]"
+        
+        # Calculate absolute differences between the model output and data vector
+        abs_diffs = np.abs(model_output - data_vector)
+        
+        # sum differences across four wealth groups as in equation 6 of the paper
+        abs_diffs_sum = np.sum(abs_diffs, axis = 1)
+    
+        # Return the average absolute difference as well as the error per group
+        return abs_diffs, abs_diffs.mean(), abs_diffs_sum
+    
+    def record_error(self):
+        """
+        Record the error metric properly applying def quantify_error.
+        Some data transformation has to be conducted beforehand.
+        """
+        ### population numbers per wealth group
+        multipliers = np.array([
+                        int(0.01*self.population_size),
+                        int(0.09*self.population_size),
+                        int(0.4*self.population_size),
+                        int(0.5*self.population_size)],)
+        
+        ### OBSERVATION TRANSFORMATION DATA FORMAT
+        y = np.sum(np.multiply(self.current_obs,multipliers))
+        x =  np.multiply(self.current_obs,multipliers)
+        share_obs = x/y
+    
+        ### MODEL TRANSFORMATION DATA 
+        ### calculate total wealth over population numbers
+        a1 = (self.macro_state_ensemble.T * multipliers).T
+        ### calculate sum of wealth across wealth groups for all ensemble members
+        a2 = np.sum(a1, 0)
+        ### expand array 2
+        a3 = np.tile(a2, (4, 1))
+        ### calculate wealth shares
+        a4 = np.divide(a1, a3)
+        print('this is a4', a4)
+        current_error = self.quantify_error(a4.T, share_obs)
+        self.error_history.append(current_error[2])
+        
+        
+        
+    def plot_error(self):
+        
+        ''' this function plots the error over time which is defined as the 
+        difference between "ground truth" and model outputs on average 
+        across all 4 wealth groups and per single wealth group'''
+        
+        
+        fig, ax = plt.subplots(figsize=(10,4))
+        L = np.shape(self.macro_history_share[0][:,1:])[1]
+        x = self.obs["date_short"][::4].reset_index(drop = True).iloc[:L]
+        ax.plot(x, np.array(self.error_history)[1:])
+        ax.set_xticks(x.iloc[0::20].index)
+        ax.set_xticklabels(x.iloc[0::20], rotation = 90)
+        ax.set_ylabel("error")
+        
+        my_array = np.concatenate((x, np.array(self.error_history)[1:]))
+        df = pd.DataFrame(my_array)
+        
+        df.to_csv('error_model2.csv', index=False)
+        
+        
+        
+        ### save error history data
 
     def step(self, update: bool):
         
@@ -497,9 +631,9 @@ class EnsembleKalmanFilter:
         
         self.update_decision = update ## var to pass on to other methods 
         
-                              ## for decision making
+                             ##>>>??? for decision making
         self.predict()
-        self.time = self.models[0].time
+        self.time = self.time + 1
         self.set_current_obs()
         self.update_state_ensemble()
         self.update_state_mean()
@@ -508,6 +642,8 @@ class EnsembleKalmanFilter:
         self.make_data_covariance()
         self.make_gain_matrix()
         self.record_history()
+        self.record_error()
+        #self.record_error()
         if update == True: 
             self.state_update()
         #### plot of the macro_state needs to come after state_update() so that

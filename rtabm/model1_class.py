@@ -214,7 +214,6 @@ class Model1():
         
         ### convert wealth group data to array
         result_array = np.column_stack([np.array(lst) for lst in wealth_groups_t_data])
-
         return result_array
         
     def write_data_for_plots(self):
@@ -223,7 +222,6 @@ class Model1():
         Collect data for ensemble plots if not used in ENKF
         """
         return self.collect_wealth_data()
-
 
     def __repr__(self):
         return f"{self.__class__.__name__}('population size: {self.num_agents}'),('economy size: {self.economy_wealth}')"
