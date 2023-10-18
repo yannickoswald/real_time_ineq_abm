@@ -142,7 +142,7 @@ class Model2:
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         ax.get_yaxis().set_visible(False)
         ax.set_ylim((-0.05,0.61))
-        ax.legend(loc=(1.05, 0.45), frameon = False)
+        #ax.legend(loc=(1.05, 0.45), frameon = False)
         ax.margins(0)
         ax.text(0,0.65, 'b', fontsize = 12)
         return y 

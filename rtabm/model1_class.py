@@ -208,7 +208,7 @@ class Model1():
         #ax1.legend(frameon = False, bbox_to_anchor=(0.45, 0.7, 1., .102))
         ax.set_ylim((-0.05, 0.61))
         ax.set_yticklabels(['0%', '0%', '10%', '20%', '30%', '40%', '50%', '60%'])
-        ax.set_ylabel("Share of wealth")
+        ax.set_ylabel("wealth share")
         ax.margins(0)
         ax.text(0,0.65, 'a',  fontsize = 12)
         

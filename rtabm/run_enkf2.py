@@ -18,7 +18,7 @@ from enkf_yo2 import EnsembleKalmanFilter2
 
 
 
-def prepare_enkf():
+def prepare_enkf2():
 
     #%%
     path = ".."
@@ -51,7 +51,7 @@ def prepare_enkf():
     return enkf
 
 
-def run_enkf(enkf):
+def run_enkf2(enkf):
 
     time_horizon = 29*12 ## 29 years * 12 months
     for i in tqdm(range(time_horizon), desc="Iterations"):
@@ -65,18 +65,17 @@ def run_enkf(enkf):
             
            
 
-def plot_enkf(enkf):
-    enkf.plot_fanchart()
+def plot_enkf2(enkf):
     #enkf.plot_micro_state()
     #enkf.plot_macro_state(log_var = True)
-    enkf.plot_error()
+    return enkf.plot_error(), enkf.plot_fanchart()
 
 
 
 if __name__=="__main__":
-    enkf = prepare_enkf()
-    run_enkf(enkf)
-    plot_enkf(enkf)
+    enkf = prepare_enkf2()
+    run_enkf2(enkf)
+    plot_enkf2(enkf)
     print("EnKF micro state ensemble:\n", enkf.micro_state_ensemble)
     print("EnKF macro state ensemble:\n", enkf.macro_state_ensemble)
 

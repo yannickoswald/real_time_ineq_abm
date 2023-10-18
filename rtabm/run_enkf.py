@@ -17,7 +17,7 @@ from enkf_yo import EnsembleKalmanFilter
 
 def prepare_enkf():
 
-    #%%
+
     path = ".."
     ### LOAD empirical monthly wealth Data
     with open(os.path.join(path, 'data', 'wealth_data_for_import.csv')) as f:
@@ -26,7 +26,7 @@ def prepare_enkf():
     ### LOAD empirical monthly wealth Data sorted by group for state vector check
     with open(os.path.join(path, 'data', 'wealth_data_for_import2.csv')) as f2:
         d2 = pd.read_csv(f2, encoding = 'unicode_escape')
-    #%%
+
 
     ### let us say the state vector is the share of wealth
     ### of 4 wealth groups top 1%, top 10% etc.
@@ -50,7 +50,7 @@ def prepare_enkf():
 
 def run_enkf(enkf):
 
-    time_horizon = 12*29 ## 29 years * 12 months
+    time_horizon = 29*12 ## 29 years * 12 months
     for i in tqdm(range(time_horizon), desc="Iterations"):
         #if i == 1: break
         ### set update to false or true
@@ -58,20 +58,19 @@ def run_enkf(enkf):
             enkf.step(update = False)
             test = enkf.plot_macro_state(False)
         else:
-            enkf.step(update = True)
+            enkf.step(update = False)
 
 def plot_enkf(enkf):
-    enkf.plot_fanchart()
     #enkf.plot_micro_state()
     #enkf.plot_macro_state(log_var = True)
+    fig, ax = plt.subplots(figsize = (8,6))
+    enkf.plot_fanchart(ax) ### now an axis needs to be passed to this plot 
     enkf.plot_error()
 
 if __name__=="__main__":
-    model = prepare_enkf()
-    run_enkf(model)
-    plot_enkf(model)
-    print("EnKF micro state ensemble:\n", model.micro_state_ensemble)
-    print("EnKF macro state ensemble:\n", model.macro_state_ensemble)
+    enkf1 = prepare_enkf()
+    run_enkf(enkf1)
+    plot_enkf(enkf1)
 
 
 

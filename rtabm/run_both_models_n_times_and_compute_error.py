@@ -10,16 +10,18 @@ import os
 import numpy as np
 from tqdm import tqdm  ### package for progress bars
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
 ### MODEL 1 infrastructure
 from model1_class import Model1
-from enkf_yo import EnsembleKalmanFilter
+from run_enkf import *
 ### MODEL 2 infrastructure
 from model2_class import Model2
-from enkf_yo2 import EnsembleKalmanFilter
+from run_enkf2 import *
+
 import pandas as pd
 
 
-class benchmarking_error:
+class benchmarking_error_simple:
     
     def __init__(self, ensemble_size, **kwargs):
         
@@ -120,9 +122,9 @@ class benchmarking_error:
         self.mean_error_model2 = np.mean(errors_model2,axis = 1)
     
     
-    def plot_graph(self):
+    def plot_graph(self, ax):
     
-        fig, ax = plt.subplots(figsize=(10,4))
+        #fig, ax = plt.subplots(figsize=(10,4))
         x = self.subset_df["date_short"][::4].reset_index(drop = True)
         ax.plot(x, self.mean_error_model1, label = "model 1")
         ax.plot(x, self.mean_error_model2, label = "model 2")
@@ -131,11 +133,64 @@ class benchmarking_error:
         ax.legend(frameon = False)
         ax.set_ylabel("error metric")
         ax.margins(0)
-        plt.savefig('fig3.png',  bbox_inches='tight', dpi=300)
+        #plt.savefig('fig3.png',  bbox_inches='tight', dpi=300)
         
+
+
+
+#%% benchmarking fangraph of both models 
+
+enkf1 = prepare_enkf()
+enkf2 = prepare_enkf2()
+run_enkf(enkf1)
+run_enkf(enkf2)
+
+
+benchmark = benchmarking_error_simple(2)
+benchmark.collect_data()
+benchmark.compute_error()
+
+
+# Now let's say you want to integrate this into another grid layout
+fig = plt.figure(figsize=(10, 10))
+
+# Create a gridspec object
+gs = gridspec.GridSpec(3, 2, height_ratios=[1, 1, 1])
+# Create individual subplots
+ax0 = plt.subplot(gs[0, 0])
+ax1 = plt.subplot(gs[0, 1])
+ax2 = plt.subplot(gs[1, 0])
+ax3 = plt.subplot(gs[1, 1])
+ax4 = plt.subplot(gs[2, :])  # This one spans both columns
+
+
+
+
+enkf1.models[0].plot_wealth_groups_over_time(ax0, 29*12)
+enkf2.models[0].plot_wealth_groups_over_time(ax1)
+enkf1.plot_fanchart(ax2)
+enkf2.plot_fanchart(ax3)
+benchmark.plot_graph(ax4)
+
+###EXTRAS
+ax1.legend(loc=(1.05, -0.45), frameon = False)
+ax2.text(0,1.05, 'c', fontsize = 12)
+ax2.set_yticklabels(['0%', '0%', '20%', '40%', '60%', '80%', '100%'])
+ax3.text(0,1.05, 'd', fontsize = 12)
+# Get the limits
+x_min, x_max = ax4.get_xlim()
+y_min, y_max = ax4.get_ylim()
+ax4.text(0,y_max+0.02, 'e', fontsize = 12)
+
+
+plt.tight_layout()
+plt.show()
+plt.savefig('fig2.png', dpi = 300)
 #%%
+'''
 if __name__ == "__main__":
-    benchmark = benchmarking_error(20)
+    benchmark = benchmarking_error_simple(2)
     benchmark.collect_data()
     benchmark.compute_error()
     benchmark.plot_graph()
+'''

@@ -454,7 +454,7 @@ class EnsembleKalmanFilter2:
             self.macro_history[count] = np.concatenate((value, x), axis = 1)
         self.micro_history.append(self.micro_state_ensemble)
         
-    def plot_fanchart(self): 
+    def plot_fanchart(self, ax): 
         
         '''make fanchart of model runs over wealth share by group
         until up to time point where the filter/model is applied to.'''
@@ -489,7 +489,7 @@ class EnsembleKalmanFilter2:
         #### Make 4 arrays for all time steps so far for all of the 4 wealth
         #### groups 
         ######## NEED TO RECORD MICROHISTORY AS WELL ###
-        fig, ax = plt.subplots(figsize = (8,6))
+        #fig, ax = plt.subplots(figsize = (8,6))
         ### x needs to be set just once
         ### to the correct length
         L = np.shape(self.macro_history_share[0][:,1:])[1]
@@ -532,10 +532,10 @@ class EnsembleKalmanFilter2:
                         "Top 10%-1%","__ci4","__ci5","__ci6",
                         "Middle 40%", "__ci7","__ci8","__ci9",
                         "Bottom 50%", "__ci10","__ci11","__ci12"]
-        ax.legend([f'{o}' for o in legend_items],
-                  frameon = False, bbox_to_anchor = (1.25, 0.6), loc='center right')
+        #ax.legend([f'{o}' for o in legend_items],
+         #         frameon = False, bbox_to_anchor = (1.25, 0.6), loc='center right')
         ax.margins(x=0)
-        plt.show()
+        
         
     
     def quantify_error(self, model_output, data_vector):
@@ -566,7 +566,10 @@ class EnsembleKalmanFilter2:
         abs_diffs_sum = np.sum(abs_diffs, axis = 1)
     
         # Return the average absolute difference as well as the error per group
-        return abs_diffs, abs_diffs.mean(), abs_diffs_sum
+        return abs_diffs, abs_diffs.mean(), np.mean(abs_diffs_sum, axis = 0)
+    
+    
+    
     
     def record_error(self):
         """
@@ -615,11 +618,14 @@ class EnsembleKalmanFilter2:
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         ax.set_ylabel("error")
         
-        my_array = np.concatenate((x, np.array(self.error_history)[1:]))
-        df = pd.DataFrame(my_array)
+        # Create a new DataFrame
+        df = pd.DataFrame({
+            'Date': x,
+            'Error': self.error_history[1:]
+        })
         
         df.to_csv('error_model2.csv', index=False)
-        
+        return fig
         
         
         ### save error history data
