@@ -181,11 +181,11 @@ ax3.text(0,1.05, 'd', fontsize = 12)
 x_min, x_max = ax4.get_xlim()
 y_min, y_max = ax4.get_ylim()
 ax4.text(0,y_max+0.02, 'e', fontsize = 12)
-
-
 plt.tight_layout()
-plt.show()
 plt.savefig('fig2.png', dpi = 300)
+
+plt.show()
+
 #%%
 '''
 if __name__ == "__main__":
