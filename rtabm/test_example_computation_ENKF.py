@@ -23,35 +23,43 @@ with open(os.path.join(path, 'data_example.csv')) as f1:
 with open(os.path.join(path, 'H_example.csv')) as f2:
     d3 = pd.read_csv(f2, encoding = 'unicode_escape', index_col = None, header = None)
     
-
+#### subset data right before the kalman update state in the current implementation
 agent_data = np.array(d1.iloc[50:60,:]) ## 10 agents over 5 simulations
 obs_ensemble = np.array(d2.iloc[12:15,:]) ## 10 agents over 5 simulations
-
+H = np.array(d3)
 #%%
 #prepare enkf computation to recreate exactly one full ENKF step
 
 
 #### MAKE Kalman Filter
 
+
+
+def make_data_covariance(data):
+    """
+    Create data covariance matrix which assumes no correlation between 
+    data time series
+    """
+    return np.diag(data)
+
         
-def make_gain_matrix():
+def make_gain_matrix(micro_state_ensemble, data_covariance, H):
     """
     Create kalman gain matrix.
-    Should be a (n x 4) matrix since in the state update equation we have
-    the n-dim vector (because of n-agents) + the update term which 4 dimensional
+    Should be a (n x 3) matrix since in the state update equation we have
+    the n-dim vector (because of n-agents) + the update term which is 3 dimensional
+    in this test example only because there are only 10 agents
     so the Kalman Gain needs to make it (n x 1)
     micro_state_ensemble should be num_agents x ensemble_size 
     """
 
-    C = np.cov(self.micro_state_ensemble)
-    state_covariance = self.H @ C @ self.H.T
-    diff = state_covariance + self.data_covariance
-    self.Kalman_Gain = C @ self.H.T @ np.linalg.inv(diff)
+    C = np.cov(micro_state_ensemble)
+    state_covariance = H @ C @ H.T
+    diff = state_covariance + data_covariance
+    Kalman_Gain = C @ H.T @ np.linalg.inv(diff)
+    return Kalman_Gain
 
-    '''
-    Keiran version original
-    C = np.cov(self.state_ensemble)
-    state_covariance = self.H @ C @ self.H_transpose
-    diff = state_covariance + self.data_covariance
-    return C @ self.H_transpose @ np.linalg.inv(diff)
-    '''
+
+
+data_covariance = make_data_covariance()
+make_gain_matrix(agent_data, data_covariance , H)

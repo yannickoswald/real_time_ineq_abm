@@ -166,7 +166,8 @@ class EnsembleKalmanFilter:
       
     def make_data_covariance(self):
         """
-        Create data covariance matrix.
+        Create data covariance matrix which assumes no correlation between 
+        data time series.
         """
         self.data_covariance = np.diag(self.current_obs_var)
 
@@ -232,8 +233,12 @@ class EnsembleKalmanFilter:
        
         
         ### 2ND TASK
-        ### track history of computed data ensemble average
+        ### track history of computed data ensemble average and of entire data_ensemble
+        
+        ''' TO DO track entire data ensemble !!! '''
+        
         r = np.mean(self.data_ensemble, 1)[:,None] ## r for intermediate result
+        print(r)
         p = self.population_size
         if p >= 100:
             pop = np.array([0.01*p,0.09*p,0.4*p,0.5*p])[:, None]
