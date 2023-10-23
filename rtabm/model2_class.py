@@ -140,11 +140,12 @@ class Model2:
         x = x.reset_index(drop=True)
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
-        ax.get_yaxis().set_visible(False)
-        ax.set_ylim((-0.05,0.61))
+        ax.get_yaxis().set_visible(True)
+        ax.set_ylim((-0.05,0.8))
+        ax.set_yticklabels(['0%', '0%', '20%', '40%', '60%', '80%'])
         #ax.legend(loc=(1.05, 0.45), frameon = False)
         ax.margins(0)
-        ax.text(0,0.65, 'b', fontsize = 12)
+        ax.text(0,0.85, 'b', fontsize = 12)
         return y 
         
     def write_data_for_plots(self):

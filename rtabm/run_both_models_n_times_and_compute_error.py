@@ -131,7 +131,7 @@ class benchmarking_error_simple:
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         ax.legend(frameon = False)
-        ax.set_ylabel("error metric")
+        ax.set_ylabel("Mean absolute error metric")
         ax.margins(0)
         #plt.savefig('fig3.png',  bbox_inches='tight', dpi=300)
         
@@ -140,7 +140,7 @@ class benchmarking_error_simple:
 
 #%% benchmarking fangraph of both models 
 
-enkf1 = prepare_enkf()
+enkf1 = prepare_enkf(num_agents=100, ensemble_size=30, macro_state_dim=4)
 enkf2 = prepare_enkf2()
 run_enkf(enkf1)
 run_enkf(enkf2)
@@ -173,9 +173,10 @@ enkf2.plot_fanchart(ax3)
 benchmark.plot_graph(ax4)
 
 ###EXTRAS
-ax1.legend(loc=(1.05, -0.45), frameon = False)
+ax1.legend(loc=(1.05, -0.55), frameon = False)
 ax2.text(0,1.05, 'c', fontsize = 12)
-ax2.set_yticklabels(['0%', '0%', '20%', '40%', '60%', '80%', '100%'])
+ax2.set_yticklabels(['0%', '20%', '40%', '60%', '80%', '100%'])
+ax3.set_yticklabels(['0%', '20%', '40%', '60%', '80%', '100%'])
 ax3.text(0,1.05, 'd', fontsize = 12)
 # Get the limits
 x_min, x_max = ax4.get_xlim()

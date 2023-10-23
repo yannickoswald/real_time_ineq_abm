@@ -206,11 +206,12 @@ class Model1():
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         #ax1.legend(frameon = False, bbox_to_anchor=(0.45, 0.7, 1., .102))
-        ax.set_ylim((-0.05, 0.61))
-        ax.set_yticklabels(['0%', '0%', '10%', '20%', '30%', '40%', '50%', '60%'])
+        ax.set_ylim((-0.05, 0.8))
+        ax.set_yticklabels(['0%', '0%', '20%', '40%', '60%', '80%'])
+        #ax.set_yticklabels(['0%', '0%', '10%', '20%', '30%', '40%', '50%', '60%'])
         ax.set_ylabel("wealth share")
         ax.margins(0)
-        ax.text(0,0.65, 'a',  fontsize = 12)
+        ax.text(0,0.85, 'a',  fontsize = 12)
         
         ### convert wealth group data to array
         result_array = np.column_stack([np.array(lst) for lst in wealth_groups_t_data])

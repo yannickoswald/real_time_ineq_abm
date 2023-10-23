@@ -15,8 +15,9 @@ from inequality_metrics import find_wealth_groups
 from enkf_yo import EnsembleKalmanFilter
 
 
-def prepare_enkf():
-
+def prepare_enkf(num_agents:int, ensemble_size:int, macro_state_dim: int):
+    
+    assert macro_state_dim == 3 or macro_state_dim == 4 , "Incorrect dimensions for macro state."
 
     path = ".."
     ### LOAD empirical monthly wealth Data
@@ -30,9 +31,8 @@ def prepare_enkf():
 
     ### let us say the state vector is the share of wealth
     ### of 4 wealth groups top 1%, top 10% etc.
-    num_agents = 100
-    filter_params = {"ensemble_size": 10,
-                     "macro_state_vector_length": 4,
+    filter_params = {"ensemble_size": ensemble_size,
+                     "macro_state_vector_length": macro_state_dim,
                      "micro_state_vector_length": num_agents}
 
     model_params = {"population_size": num_agents,
@@ -50,15 +50,15 @@ def prepare_enkf():
 
 def run_enkf(enkf):
 
-    time_horizon = 29*12 ## 29 years * 12 months
+    time_horizon = 10 ## 29 years * 12 months
     for i in tqdm(range(time_horizon), desc="Iterations"):
         #if i == 1: break
         ### set update to false or true
-        if i % 100 != 0 or i == 0:
+        if i % 5 != 0 or i == 0:
             enkf.step(update = False)
             test = enkf.plot_macro_state(False)
         else:
-            enkf.step(update = False)
+            enkf.step(update = True)
 
 def plot_enkf(enkf):
     #enkf.plot_micro_state()
@@ -68,10 +68,33 @@ def plot_enkf(enkf):
     enkf.plot_error()
 
 if __name__=="__main__":
-    enkf1 = prepare_enkf()
+    ### if num_agents >= 100 then macro_state_dim = 4, otherwise = 3
+    enkf1 = prepare_enkf(num_agents=10, ensemble_size= 5, macro_state_dim = 3)
     run_enkf(enkf1)
     plot_enkf(enkf1)
 
 
-
+### save dataframe with all data necessary for 5 x 10 example (5 ensemble simulations, 10 agents)
         
+agents_data = enkf1.micro_history
+data_ensemble = enkf1.data_ensemble_history
+H = enkf1.H
+
+
+columns=['Column1', 'Column2', 'Column3',
+         'Column4', 'Column5'] 
+
+
+# Vertically stack arrays into a 2D array
+stacked_array = np.vstack(agents_data)
+stacked_array2 = np.vstack(data_ensemble)
+# Convert list of arrays to DataFrame
+df1 = pd.DataFrame(stacked_array, columns = columns)
+df2 = pd.DataFrame(stacked_array2)
+
+# Save the DataFrame to a CSV file
+df1.to_csv('agent_example.csv', index=False)
+df2.to_csv('data_example.csv', index=False)
+# Save array to CSV file
+np.savetxt('H_example.csv', H, delimiter=',')
+

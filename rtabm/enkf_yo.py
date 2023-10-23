@@ -55,19 +55,28 @@ class EnsembleKalmanFilter:
                  warns.warn(w, RuntimeWarning)
              setattr(self, k, v)
               
-        ### set up storage for data history. Macro-history consists of 4 groups
-        ### so thus it is a list with four elements which will be arrays that 
-        ### increase their size with time. 
-        macro_hist_shape = np.zeros(shape=(self.ensemble_size,1))
-        self.macro_history = [macro_hist_shape,
-                              macro_hist_shape,
-                              macro_hist_shape,
-                              macro_hist_shape]
+ 
         self.macro_history_share = list()
         self.micro_history = list()
         self.error_history = list()
         # Set up ensemble of models and other global properties
-        self.population_size = model_params["population_size"]    
+        self.population_size = model_params["population_size"]  
+        ### set up storage for data history. Macro-history consists of 4 groups
+        ### so thus it is a list with four elements which will be arrays that 
+        ### increase their size with time. 
+        ### but control flow for if there are < 100 agents
+        macro_hist_shape = np.zeros(shape=(self.ensemble_size,1))
+        if self.population_size >= 100:
+            self.macro_history = [macro_hist_shape,
+                                  macro_hist_shape,
+                                  macro_hist_shape,
+                                  macro_hist_shape]
+        else:
+            ## there are only 3 wealth groups with < 100 agents
+            self.macro_history = [macro_hist_shape,
+                                  macro_hist_shape,
+                                  macro_hist_shape]
+
         self.models = [model(**model_params) for _ in range(self.ensemble_size)]
         shape_macro = (self.macro_state_vector_length, self.ensemble_size)
         shape_micro = (self.micro_state_vector_length, self.ensemble_size)
@@ -81,7 +90,8 @@ class EnsembleKalmanFilter:
         self.update_decision = None
         #### Observation matrix = translation matrix between macro and micro
         #### states
-        self.H = self.make_H(self.micro_state_vector_length, 4).T
+        self.H = self.make_H(self.micro_state_vector_length, 
+                             self.macro_state_vector_length).T
         self.ensemble_covariance = None
         self.data_ensemble = None 
         self.data_ensemble_history = list() ### need this to track and plot observation mean
@@ -121,9 +131,16 @@ class EnsembleKalmanFilter:
         in the models as well as the variance of the current observation.
         This is used in the method update_data_ensemble"""
         
-        self.current_obs = self.obs.iloc[self.time*4-4:self.time*4, 5]
-        self.current_obs_var = self.obs.iloc[self.time*4-4:self.time*4, 6]
-        
+        ## control for population size = number of agents
+        if self.population_size >= 100:
+            self.current_obs = self.obs.iloc[self.time*4-4:self.time*4, 5]
+            self.current_obs_var = self.obs.iloc[self.time*4-4:self.time*4, 6]
+        else:
+            ### sub set only top 10% idx 4-3 excludes only the top1%
+            self.current_obs = self.obs.iloc[self.time*4-3:self.time*4, 5]
+            self.current_obs_var = self.obs.iloc[self.time*4-3:self.time*4, 6]
+            
+            
     def update_state_ensemble(self):
         """
         Update self.state_ensemble based on the states of the models.
@@ -163,12 +180,24 @@ class EnsembleKalmanFilter:
         the average per group. This means the normalization constant is just 1/k
         where k is the number of agents per group.'''
         
+        ## check whether there are at least 10 agents    
+        assert dim_micro_state >= 10, "agent quantity cannot be less than 10" # denominator can't be 0
+        ## set overall dimensions
+        
         H = np.zeros((dim_micro_state, dim_data))
         L = self.micro_state_vector_length
-        H[:int(L*0.01),0] = 1/(L*0.01) ### H entries are normalized
-        H[int(L*0.01):int(L*0.1),1] = 1/(L*0.09) #next 9%
-        H[int(L*0.1):int(L*0.5),2] = 1/(L*0.4) # next 40%
-        H[int(L*0.5):,3] = 1/(L*0.5)
+        ## check whether there are at least 100 agents
+        print("this is dim micro", dim_micro_state)
+        if dim_micro_state >= 100:
+            H[:int(round(L*0.01)),0] = 1/(L*0.01) ### H entries are normalized
+            H[int(round(L*0.01)):int(round(L*0.1)),1] = 1/(L*0.09) #next 9%
+            H[int(round((L*0.1))):int(round(L*0.5)),2] = 1/(L*0.4) # next 40%
+            H[int(round(L*0.5)):,3] = 1/(L*0.5) #bottom 50%
+        else:
+            H[:int(round(L*0.1)),0] = 1/(L*0.1) #top 10%
+            H[int(round(L*0.1)):int(round(L*0.5)),1] = 1/(L*0.4) # next 40%
+            H[int(round(L*0.5)):,2] = 1/(L*0.5) # bottom 50%
+            
         return H
     
     def update_data_ensemble(self):
@@ -206,11 +235,18 @@ class EnsembleKalmanFilter:
         ### track history of computed data ensemble average
         r = np.mean(self.data_ensemble, 1)[:,None] ## r for intermediate result
         p = self.population_size
-        pop = np.array([0.01*p,0.09*p,0.4*p,0.5*p])[:, None]
-        r2 = np.multiply(r,pop)
-        d = np.where(r2 > 0)
-        r3 = r2 / np.sum(r2[d])
-        self.data_ensemble_history.append(r3)
+        if p >= 100:
+            pop = np.array([0.01*p,0.09*p,0.4*p,0.5*p])[:, None]
+            r2 = np.multiply(r,pop)
+            d = np.where(r2 > 0)
+            r3 = r2 / np.sum(r2[d])
+            self.data_ensemble_history.append(r3)
+        else:
+            pop = np.array([0.1*p,0.4*p,0.5*p])[:, None]
+            r2 = np.multiply(r,pop)
+            d = np.where(r2 > 0)
+            r3 = r2 / np.sum(r2[d])
+            self.data_ensemble_history.append(r3)
 
         
     def make_gain_matrix(self):
@@ -220,26 +256,23 @@ class EnsembleKalmanFilter:
         the n-dim vector (because of n-agents) + the update term which 4 dimensional
         so the Kalman Gain needs to make it (n x 1)
         micro_state_ensemble should be num_agents x ensemble_size 
-        
         """
-        
         #### here the control sequence is implemented to control for ensemble size = 1
         #### the np.cov fct. then does not correctly interpret the micro_state_vector
         #### hence in tht case the ensemble size covariance matrix will be 0
         #### as it should be because there is no sample covariance with a sample of 1
         if self.ensemble_size == 1:
             ### squeeze array to get rid of the added column dimension
-            help_array = np.concatenate((self.micro_state_ensemble,self.micro_state_ensemble),1)
-            C = np.cov(help_array)
-            
+            help_array = np.concatenate((self.micro_state_ensemble, self.micro_state_ensemble),1)
+            C = np.cov(help_array)    
         else:
             C = np.cov(self.micro_state_ensemble)
         state_covariance = self.H @ C @ self.H.T
         diff = state_covariance + self.data_covariance
         self.Kalman_Gain = C @ self.H.T @ np.linalg.inv(diff)
-        
-        
-        '''Keiran version original
+    
+        '''
+        Keiran version original
         C = np.cov(self.state_ensemble)
         state_covariance = self.H @ C @ self.H_transpose
         diff = state_covariance + self.data_covariance
@@ -296,19 +329,23 @@ class EnsembleKalmanFilter:
         
         if not isinstance(log_var, bool):
             raise TypeError
+        
             
+        ## set data dimensions 
+        dim = len(self.macro_state_ensemble)-1
         ####################################
         ### prepare system macro-state estimate
         ####################################
+        
         if log_var == True:
             x = np.log(self.macro_state_ensemble[0,:])
-            y = np.log(self.macro_state_ensemble[3,:])
+            y = np.log(self.macro_state_ensemble[dim,:])
             # Set up grid points for plotting later fed into meshgrid
             x_grid = np.linspace(min(x)*0.9, max(x)*1.1, 100)
             y_grid = np.linspace(min(y)*0.9, max(y)*1.1, 100)
         elif log_var == False:
             x = self.macro_state_ensemble[0,:]
-            y = self.macro_state_ensemble[3,:]
+            y = self.macro_state_ensemble[dim,:]
             x_grid = np.linspace(0, max(x)*1.1, 100)
             y_grid = np.linspace(0, max(y)*1.1, 100)
         x_mean = np.mean(x)
@@ -325,12 +362,12 @@ class EnsembleKalmanFilter:
         ##########################################
         if log_var == True:
             x2 = np.log(self.data_ensemble[0,:])
-            y2 = np.log(self.data_ensemble[3,:])
+            y2 = np.log(self.data_ensemble[dim,:])
             x_grid2 = np.linspace(min(x2)*0.9, max(x2)*1.1, 100)
             y_grid2 = np.linspace(min(y2)*0.9, max(y2)*1.1, 100)
         elif log_var == False: 
             x2 = self.data_ensemble[0,:]
-            y2 = self.data_ensemble[3,:]
+            y2 = self.data_ensemble[dim,:]
             x_grid2 = np.linspace(0, max(x2)*1.1, 100)
             y_grid2 = np.linspace(0, max(y2)*1.1, 100)
         x_mean2 = np.mean(x2)
@@ -348,12 +385,12 @@ class EnsembleKalmanFilter:
         if self.update_decision == True: 
             if log_var == True:
                 x3 = np.log(self.macro_state_ensemble_old[0,:])
-                y3 = np.log(self.macro_state_ensemble_old[3,:])
+                y3 = np.log(self.macro_state_ensemble_old[dim,:])
                 x_grid3 = np.linspace(min(x3)*0.9, max(x3)*1.1, 100)
                 y_grid3 = np.linspace(min(y3)*0.9, max(y3)*1.1, 100)
             elif log_var == False:
                 x3 = self.macro_state_ensemble_old[0,:]
-                y3 = self.macro_state_ensemble_old[3,:]
+                y3 = self.macro_state_ensemble_old[dim,:]
                 x_grid3= np.linspace(0, max(x3)*1.1, 100)
                 y_grid3 = np.linspace(0, max(y3)*1.1, 100)
 
@@ -462,23 +499,34 @@ class EnsembleKalmanFilter:
         A = None ## placeholder for macro_history as wealth shares
         ### PLOT empirical monthly wealth Data vs model output for chosen time-frame
         colors = ["tab:red", "tab:blue", "grey", "y"]
-        wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
+        
+        ## control for population size
+    
+        if self.population_size >= 100:
+            wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
+            
+            multipliers = [int(0.01*self.population_size),
+                            int(0.09*self.population_size),
+                            int(0.4*self.population_size),
+                            int(0.5*self.population_size)]
+        else:
+            wealth_groups = ["Top 10%", "Middle 40%", "Bottom 50%"]
+            multipliers = [int(0.1*self.population_size),
+                                int(0.4*self.population_size),
+                                int(0.5*self.population_size)]
+            
         #### compute total_wealth time series
         total_wealth_ts = np.zeros(shape=(self.ensemble_size, self.time))
-        multipliers = [int(0.01*self.population_size),
-                        int(0.09*self.population_size),
-                        int(0.4*self.population_size),
-                        int(0.5*self.population_size)]
+        
     
-        for i in range(3):
-            ### here we make the total wealth calculation. top 1% does not need to 
-            ### be counted as it is part of the top 10% hence range(3) and
-            ### idx over i+1 
-            m = self.macro_history[i+1][:,1:]
-            n = multipliers[i+1]
+        for i in range(len(multipliers)):
+            ### here we make the total wealth calculation. ## needs to be flexible
+            ### for different size populations
+            m = self.macro_history[i][:,1:]
+            n = multipliers[i]
             total_wealth_ts += np.multiply(m,n)    
         
-        for i in range(4):
+        for i in range(len(multipliers)):
             m = self.macro_history[i][:,1:]
             n = multipliers[i]
             q = np.multiply(m, n)
@@ -495,7 +543,7 @@ class EnsembleKalmanFilter:
         ### to the correct length
         L = np.shape(self.macro_history_share[0][:,1:])[1]
         x = self.obs["date_short"][::4].reset_index(drop = True).iloc[:L]
-        for i in range(4):
+        for i in range(len(multipliers)):
             arr = self.macro_history_share[i][:,1:]  ## without the first column
             # for the median use `np.median` and change the legend below
             mean = np.mean(arr, axis=0)
@@ -556,8 +604,8 @@ class EnsembleKalmanFilter:
             data_vector = np.array(data_vector)
             
             # Ensure dimensions are correct
-            assert model_output.shape[1] == 4, "Model output should have shape [n, 4]"
-            assert len(data_vector) == 4, "Data vector should have shape [4]"
+            assert model_output.shape[1] == len(self.macro_history), f"Model output should have shape [n, {len(self.macro_history)}]"
+            assert len(data_vector) == len(self.macro_history), "Data vector should have shape [{len(self.macro_history)}]"
             
             # Calculate absolute differences between the model output and data vector
             abs_diffs = np.abs(model_output - data_vector)
@@ -571,11 +619,18 @@ class EnsembleKalmanFilter:
         Some data transformation has to be conducted beforehand.
         """
         ### population numbers per wealth group
-        multipliers = np.array([
-                        int(0.01*self.population_size),
-                        int(0.09*self.population_size),
-                        int(0.4*self.population_size),
-                        int(0.5*self.population_size)],)
+        if self.population_size >= 100:
+            multipliers = np.array([
+                            int(0.01*self.population_size),
+                            int(0.09*self.population_size),
+                            int(0.4*self.population_size),
+                            int(0.5*self.population_size)],)
+        else:
+            multipliers = np.array([
+                            int(0.1*self.population_size),
+                            int(0.4*self.population_size),
+                            int(0.5*self.population_size)],)
+            
         
         ### OBSERVATION TRANSFORMATION DATA FORMAT
         y = np.sum(np.multiply(self.current_obs,multipliers))
@@ -587,8 +642,9 @@ class EnsembleKalmanFilter:
         a1 = (self.macro_state_ensemble.T * multipliers).T
         ### calculate sum of wealth across wealth groups for all ensemble members
         a2 = np.sum(a1, 0)
+        assert a1.shape[0] == multipliers.shape[0]
         ### expand array 2
-        a3 = np.tile(a2, (4, 1))
+        a3 = np.tile(a2, (multipliers.shape[0], 1))
         ### calculate wealth shares
         a4 = np.divide(a1, a3)
         current_error = self.quantify_error(a4.T, share_obs)
@@ -622,10 +678,6 @@ class EnsembleKalmanFilter:
         #df = pd.DataFrame(my_array)
         
         df.to_csv('error_model1.csv', index=False)
-
-        
-        
-        
         ### save error history data
 
     def step(self, update: bool):

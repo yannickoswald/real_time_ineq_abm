@@ -34,7 +34,7 @@ def prepare_enkf2():
     ### let us say the state vector is the share of wealth
     ### of 4 wealth groups top 1%, top 10% etc.
     num_agents = 100
-    filter_params = {"ensemble_size": 10,
+    filter_params = {"ensemble_size": 30,
                      "macro_state_vector_length": 4,
                      "micro_state_vector_length": num_agents}
 

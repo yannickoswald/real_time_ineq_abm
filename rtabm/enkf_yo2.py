@@ -597,7 +597,6 @@ class EnsembleKalmanFilter2:
         a3 = np.tile(a2, (4, 1))
         ### calculate wealth shares
         a4 = np.divide(a1, a3)
-        print('this is a4', a4)
         current_error = self.quantify_error(a4.T, share_obs)
         self.error_history.append(current_error[2])
         
