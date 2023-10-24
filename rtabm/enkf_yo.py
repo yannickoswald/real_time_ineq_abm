@@ -94,7 +94,10 @@ class EnsembleKalmanFilter:
                              self.macro_state_vector_length).T
         self.ensemble_covariance = None
         self.data_ensemble = None 
-        self.data_ensemble_history = list() ### need this to track and plot observation mean
+        self.data_ensemble_history = list() ### need this to track and plot observation
+        self.data_ensemble_history_average = list() ### need this to track and plot observation mean
+        self.current_obs_history = list()
+        self.current_obs_var_history = list()
         self.data_covariance = None
         self.Kalman_Gain = None
         self.state_mean = None
@@ -135,10 +138,14 @@ class EnsembleKalmanFilter:
         if self.population_size >= 100:
             self.current_obs = self.obs.iloc[self.time*4-4:self.time*4, 5]
             self.current_obs_var = self.obs.iloc[self.time*4-4:self.time*4, 6]
+            self.current_obs_history.append(self.current_obs)
+            self.current_obs_var_history.append(self.current_obs_var)
         else:
             ### sub set only top 10% idx 4-3 excludes only the top1%
             self.current_obs = self.obs.iloc[self.time*4-3:self.time*4, 5]
             self.current_obs_var = self.obs.iloc[self.time*4-3:self.time*4, 6]
+            self.current_obs_history.append(self.current_obs)
+            self.current_obs_var_history.append(self.current_obs_var)
             
             
     def update_state_ensemble(self):
@@ -166,7 +173,7 @@ class EnsembleKalmanFilter:
       
     def make_data_covariance(self):
         """
-        Create data covariance matrix which assumes no correlation between 
+        Create data covariance matrix which assumes no direct correlation between 
         data time series.
         """
         self.data_covariance = np.diag(self.current_obs_var)
@@ -238,20 +245,21 @@ class EnsembleKalmanFilter:
         ''' TO DO track entire data ensemble !!! '''
         
         r = np.mean(self.data_ensemble, 1)[:,None] ## r for intermediate result
-        print(r)
         p = self.population_size
         if p >= 100:
             pop = np.array([0.01*p,0.09*p,0.4*p,0.5*p])[:, None]
             r2 = np.multiply(r,pop)
             d = np.where(r2 > 0)
             r3 = r2 / np.sum(r2[d])
-            self.data_ensemble_history.append(r3)
+            self.data_ensemble_history_average.append(r3)
+            self.data_ensemble_history.append(self.data_ensemble)
         else:
             pop = np.array([0.1*p,0.4*p,0.5*p])[:, None]
             r2 = np.multiply(r,pop)
             d = np.where(r2 > 0)
             r3 = r2 / np.sum(r2[d])
-            self.data_ensemble_history.append(r3)
+            self.data_ensemble_history_average.append(r3)
+            self.data_ensemble_history.append(self.data_ensemble)
 
         
     def make_gain_matrix(self):
@@ -563,7 +571,7 @@ class EnsembleKalmanFilter:
                 ax.fill_between(x, low, high, color=colors[i], alpha=alpha)
             
         #### Plot data ensemble history and actual observations
-        h = np.array(self.data_ensemble_history)
+        h = np.array(self.data_ensemble_history_average)
         for i, g in enumerate(wealth_groups):
             ### y variables
             y = h[:,i]

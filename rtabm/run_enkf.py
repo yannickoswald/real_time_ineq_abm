@@ -75,10 +75,15 @@ if __name__=="__main__":
 
 
 ### save dataframe with all data necessary for 5 x 10 example (5 ensemble simulations, 10 agents)
-        
+H = enkf1.H ## general obs. operator
+## all agent data 
 agents_data = enkf1.micro_history
+### all data/observation things
 data_ensemble = enkf1.data_ensemble_history
-H = enkf1.H
+current_obs_hist = enkf1.current_obs_history
+current_obs_var_hist = enkf1.current_obs_var_history
+
+
 
 
 columns=['Column1', 'Column2', 'Column3',
@@ -88,13 +93,19 @@ columns=['Column1', 'Column2', 'Column3',
 # Vertically stack arrays into a 2D array
 stacked_array = np.vstack(agents_data)
 stacked_array2 = np.vstack(data_ensemble)
+stacked_array3 = np.vstack(current_obs_hist)
+stacked_array4 = np.vstack(current_obs_var_hist)
 # Convert list of arrays to DataFrame
 df1 = pd.DataFrame(stacked_array, columns = columns)
-df2 = pd.DataFrame(stacked_array2)
+df2 = pd.DataFrame(stacked_array2, columns = columns)
+df3 = pd.DataFrame(stacked_array3)
+df4 = pd.DataFrame(stacked_array4)
 
 # Save the DataFrame to a CSV file
-#df1.to_csv('agent_example.csv', index=False)
-#df2.to_csv('data_example.csv', index=False)
+df1.to_csv('agent_example.csv', index=False)
+df2.to_csv('data_example.csv', index=False)
+df3.to_csv('current_obs_example.csv', index=False)
+df4.to_csv('current_obs_var_example.csv', index=False)
 # Save array to CSV file
-#np.savetxt('H_example.csv', H, delimiter=',')
+np.savetxt('H_example.csv', H, delimiter=',')
 
