@@ -18,7 +18,7 @@ from enkf_yo2 import EnsembleKalmanFilter2
 
 
 
-def prepare_enkf2():
+def prepare_enkf2(num_agents:int, ensemble_size:int, macro_state_dim: int):
 
     #%%
     path = ".."
@@ -33,9 +33,9 @@ def prepare_enkf2():
 
     ### let us say the state vector is the share of wealth
     ### of 4 wealth groups top 1%, top 10% etc.
-    num_agents = 100
-    filter_params = {"ensemble_size": 30,
-                     "macro_state_vector_length": 4,
+    num_agents = num_agents
+    filter_params = {"ensemble_size": ensemble_size,
+                     "macro_state_vector_length": macro_state_dim,
                      "micro_state_vector_length": num_agents}
 
     model_params = {"population_size": 100, 
@@ -44,7 +44,7 @@ def prepare_enkf2():
                     "start_year": 1990,
                     "adaptive_sensitivity": 0.02}
     
-    enkf = EnsembleKalmanFilter2(Model2, filter_params, model_params)
+    enkf = EnsembleKalmanFilter2(Model2, filter_params, model_params, 0.5)
     print("EnKF micro state ensemble:\n", enkf.micro_state_ensemble)
     print("EnKF macro state ensemble:\n", enkf.macro_state_ensemble)
 
@@ -52,31 +52,26 @@ def prepare_enkf2():
 
 
 def run_enkf2(enkf):
-
     time_horizon = 29*12 ## 29 years * 12 months
     for i in tqdm(range(time_horizon), desc="Iterations"):
         #if i == 1: break
         ### set update to false or true
-        if i % 100 != 0 or i == 0:
+        if i % 50 != 0 or i == 0:
             enkf.step(update = False)
-            test = enkf.plot_macro_state(False)
+            #test = enkf.plot_macro_state(False)
         else:
-            enkf.step(update = False)
+            enkf.step(update = True)
             
-           
-
 def plot_enkf2(enkf):
     #enkf.plot_micro_state()
     #enkf.plot_macro_state(log_var = True)
     return enkf.plot_error(), enkf.plot_fanchart()
-
-
-
+'''
 if __name__=="__main__":
-    enkf = prepare_enkf2()
-    run_enkf2(enkf)
-    plot_enkf2(enkf)
-    print("EnKF micro state ensemble:\n", enkf.micro_state_ensemble)
-    print("EnKF macro state ensemble:\n", enkf.macro_state_ensemble)
-
+    enkf2 = prepare_enkf2(num_agents=100, ensemble_size= 30, macro_state_dim = 4)
+    run_enkf2(enkf2)
+    #plot_enkf2(enkf2)
+    print("EnKF micro state ensemble:\n", enkf2.micro_state_ensemble)
+    print("EnKF macro state ensemble:\n", enkf2.macro_state_ensemble)
+'''
 

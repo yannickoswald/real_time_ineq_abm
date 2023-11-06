@@ -107,7 +107,21 @@ class Model2:
         ax.set_xlabel("wealth")
         ax.set_ylabel("frequency")
         
-    def plot_wealth_groups_over_time(self, ax):
+    def collect_wealth_data(self):
+        
+        ''' Collects macro wealth data for plotting and analysis.'''
+        
+        top1_share_over_time = [x[1][0] for x in self.macro_state_vectors] 
+        top10_share_over_time = [x[1][1] for x in self.macro_state_vectors] 
+        middle40_share_over_time = [x[1][2] for x in self.macro_state_vectors] 
+        bottom50_share_over_time = [x[1][3] for x in self.macro_state_vectors] 
+
+        return [top1_share_over_time,
+                top10_share_over_time,
+                middle40_share_over_time,
+                bottom50_share_over_time]
+        
+    def plot_wealth_groups_over_time(self, ax, period):
         """
         Plot data on the given axes.
         """
@@ -115,7 +129,22 @@ class Model2:
         path = ".."
         with open(os.path.join(path, 'data', 'wealth_data_for_import.csv')) as f:
             d1 = pd.read_csv(f, encoding = 'unicode_escape')  
+            
+        wealth_groups_t_data = self.collect_wealth_data()
         
+        colors = ["tab:red", "tab:blue", "grey", "y"]
+        wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
+        
+        
+        for i, g in enumerate(wealth_groups): 
+            x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
+            y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
+            x1 = np.linspace(1,period,period)
+            y1 = wealth_groups_t_data[i]
+            ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
+            ax.plot(x1, y1, label = g + ' model', linestyle = '-', color = colors[i])
+        
+        '''
         colors = ["tab:red", "tab:blue", "grey", "y"]
         wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
         groups_over_time = list()
@@ -126,7 +155,7 @@ class Model2:
             groups_over_time.append(t)
         y = np.vstack(groups_over_time)
         #y =  ### select the correct times
-        x = np.linspace(1, len(y), len(y))
+        x = np.linspace(1, period, period)
         
        
         for i, g in enumerate(wealth_groups):    
@@ -136,7 +165,7 @@ class Model2:
             x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
             ax.plot(x2, y2, label = wealth_groups[i] + "data", color = colors[i], linestyle = "--")
             ax.plot(x, y[0:len(y2),i], label = wealth_groups[i] + "model", color = colors[i])
-
+        '''
         x = x.reset_index(drop=True)
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
@@ -145,7 +174,7 @@ class Model2:
         ax.set_yticklabels(['0%', '0%', '20%', '40%', '60%', '80%'])
         #ax.legend(loc=(1.05, 0.45), frameon = False)
         ax.margins(0)
-        ax.text(0,0.85, 'b', fontsize = 12)
+        #ax.text(0,0.85, 'b', fontsize = 12)
         return y 
         
     def write_data_for_plots(self):

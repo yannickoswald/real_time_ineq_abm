@@ -50,8 +50,8 @@ class benchmarking_error_simple:
         :return: float, the average error metric
         """
         # Ensure dimensions are correct
-        assert model_output.shape == (model_output.shape[0], 4), "Model output should have shape [n, 4]"
-        assert data_vector.shape == (data_vector.shape[0], 4), "Data vector should have shape [n, 4]"
+        #assert model_output.shape == (model_output.shape[0], 4), "Model output should have shape [n, 4]"
+        #assert data_vector.shape == (data_vector.shape[0], 4), "Data vector should have shape [n, 4]"
         # Calculate absolute differences between the model output and data vector
         abs_diffs = np.abs(model_output - data_vector)    
         # sum differences across four wealth groups as in equation 6 of the paper
@@ -91,7 +91,7 @@ class benchmarking_error_simple:
                 economy2.step()
             fig, (ax1, ax2) = plt.subplots(1, 2,figsize=(10,4))
             self.model1_data.append(economy1.plot_wealth_groups_over_time(ax1, time_horizon))
-            self.model2_data.append(economy2.plot_wealth_groups_over_time(ax2))
+            self.model2_data.append(economy2.plot_wealth_groups_over_time(ax2, time_horizon))
 
     def compute_error(self):
         
@@ -120,6 +120,29 @@ class benchmarking_error_simple:
             
         self.mean_error_model1 = np.mean(errors_model1,axis = 1)
         self.mean_error_model2 = np.mean(errors_model2,axis = 1)
+        
+        
+        # Convert the mean error arrays to a single pandas DataFrame
+        errors_df = pd.DataFrame({
+            'mean_error_model1': self.mean_error_model1,
+            'mean_error_model2': self.mean_error_model2
+        })
+    
+        # Define the sub-folder name (the sub-folder is assumed to exist)
+        sub_folder_name = 'data'
+        
+        # Get the parent directory of the current script
+        parent_dir = os.path.dirname(os.getcwd())
+        
+        # Construct the path to the sub-folder
+        sub_folder_path = os.path.join(parent_dir, sub_folder_name)
+    
+        # Define the file path for the CSV
+        errors_csv_path = os.path.join(sub_folder_path, 'mean_errors.csv')
+    
+        # Save the DataFrame to a CSV file
+        errors_df.to_csv(errors_csv_path, index=False)
+        #print(f'Mean errors saved to {errors_csv_path}')
     
     
     def plot_graph(self, ax):
@@ -141,12 +164,12 @@ class benchmarking_error_simple:
 #%% benchmarking fangraph of both models 
 
 enkf1 = prepare_enkf(num_agents=100, ensemble_size=30, macro_state_dim=4)
-enkf2 = prepare_enkf2()
+enkf2 = prepare_enkf2(num_agents=100, ensemble_size=30, macro_state_dim=4)
 run_enkf(enkf1)
 run_enkf(enkf2)
 
 
-benchmark = benchmarking_error_simple(2)
+benchmark = benchmarking_error_simple(30)
 benchmark.collect_data()
 benchmark.compute_error()
 
@@ -164,10 +187,8 @@ ax3 = plt.subplot(gs[1, 1])
 ax4 = plt.subplot(gs[2, :])  # This one spans both columns
 
 
-
-
 enkf1.models[0].plot_wealth_groups_over_time(ax0, 29*12)
-enkf2.models[0].plot_wealth_groups_over_time(ax1)
+enkf2.models[0].plot_wealth_groups_over_time(ax1, 29*12)
 enkf1.plot_fanchart(ax2)
 enkf2.plot_fanchart(ax3)
 benchmark.plot_graph(ax4)
@@ -183,7 +204,7 @@ x_min, x_max = ax4.get_xlim()
 y_min, y_max = ax4.get_ylim()
 ax4.text(0,y_max+0.02, 'e', fontsize = 12)
 plt.tight_layout()
-plt.savefig('fig2.png', dpi = 300)
+#plt.savefig('fig2.png', dpi = 300)
 
 plt.show()
 

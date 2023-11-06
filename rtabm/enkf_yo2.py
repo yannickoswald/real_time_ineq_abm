@@ -22,7 +22,7 @@ class EnsembleKalmanFilter2:
     A class to represent a EnKF for application with a network-based wealth 
     agent-based model for the United States.
     """
-    def __init__(self, model, filter_params, model_params):
+    def __init__(self, model, filter_params, model_params, constant_a):
         """
         Initialise the Ensemble Kalman Filter.
         
@@ -43,7 +43,8 @@ class EnsembleKalmanFilter2:
         - time                                 /
         - other Kalman params.                 /                                                 
         """
-        
+        # Add a new instance attribute for constant 'a'
+        self.constant_a = constant_a
         self.ensemble_size = None
         self.macro_state_vector_length = None
         self.micro_state_vector_length = None
@@ -104,6 +105,18 @@ class EnsembleKalmanFilter2:
                                                      "real_wealth_share",
                                                      "real_wealth_per_unit",
                                                      "variance_real_wealth"]]
+        # Update the 'variance_real_wealth' column
+        self.update_variance_real_wealth(self.constant_a)
+        
+    def update_variance_real_wealth(self, a):
+       """
+       Update the 'variance_real_wealth' column in the dataframe 'self.data'
+       using the specified constant 'a' and the formula (a * real_wealth_per_unit)^2.
+       """
+       if 'real_wealth_per_unit' in self.data:
+           self.data['variance_real_wealth'] = (a * self.data['real_wealth_per_unit']) ** 2
+       else:
+           raise ValueError("The dataframe does not have the required 'real_wealth_per_unit' column.")
     
     def predict(self):
         """
@@ -261,12 +274,15 @@ class EnsembleKalmanFilter2:
         self.macro_state_ensemble_old = self.macro_state_ensemble
         
         ### start update
-        X = np.zeros(shape=(self.micro_state_vector_length, self.ensemble_size))
-        Y = np.zeros(shape=(self.macro_state_vector_length, self.ensemble_size))
-        for i in range(self.ensemble_size):
-            diff = self.data_ensemble[:, i] - self.H @ self.micro_state_ensemble[:, i] 
-            X[:, i] = self.micro_state_ensemble[:, i] + self.Kalman_Gain @ diff
-            Y[:, i] =  self.H @ X[:, i]
+        #X = np.zeros(shape=(self.micro_state_vector_length, self.ensemble_size))
+        #Y = np.zeros(shape=(self.macro_state_vector_length, self.ensemble_size))
+        #for i in range(self.ensemble_size):
+        #    diff = self.data_ensemble[:, i] - self.H @ self.micro_state_ensemble[:, i] 
+         #   X[:, i] = self.micro_state_ensemble[:, i] + self.Kalman_Gain @ diff
+          #  Y[:, i] =  self.H @ X[:, i]      
+        diff = self.data_ensemble - self.H @ self.micro_state_ensemble
+        X = self.micro_state_ensemble + self.Kalman_Gain @ diff
+        Y = self.H @ X
         ### error definitely stems from update here and is about values being smaller than 0 because it 
         #### disappear if this is introduced
         #### not sure that is a good solutions though
@@ -470,15 +486,14 @@ class EnsembleKalmanFilter2:
                         int(0.4*self.population_size),
                         int(0.5*self.population_size)]
     
-        for i in range(3):
-            ### here we make the total wealth calculation. top 1% does not need to 
-            ### be counted as it is part of the top 10% hence range(3) and
-            ### idx over i+1 
-            m = self.macro_history[i+1][:,1:]
-            n = multipliers[i+1]
+        for i in range(len(multipliers)):
+            ### here we make the total wealth calculation. 
+            m = self.macro_history[i][:,1:]
+            print("this is m", m)
+            n = multipliers[i]
             total_wealth_ts += np.multiply(m,n)    
         
-        for i in range(4):
+        for i in range(len(multipliers)):
             m = self.macro_history[i][:,1:]
             n = multipliers[i]
             q = np.multiply(m, n)
@@ -524,7 +539,7 @@ class EnsembleKalmanFilter2:
             ax.plot(x,l, label = g, color = colors[i], linestyle = 'dotted')
 
         #ax.set_xlabel("time")
-        ax.set_ylabel("wealth share")
+        #ax.set_ylabel("wealth share")
         ax.set_ylim((0,1))
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
@@ -602,29 +617,29 @@ class EnsembleKalmanFilter2:
         
         
         
-    def plot_error(self):
+    def plot_error(self, ax):
         
         ''' this function plots the error over time which is defined as the 
         difference between "ground truth" and model outputs on average 
         across all 4 wealth groups and per single wealth group'''
         
         
-        fig, ax = plt.subplots(figsize=(10,4))
+        #fig, ax = plt.subplots(figsize=(10,4))
         L = np.shape(self.macro_history_share[0][:,1:])[1]
         x = self.obs["date_short"][::4].reset_index(drop = True).iloc[:L]
-        ax.plot(x, np.array(self.error_history)[1:])
+        ax.plot(x, np.array(self.error_history)[1:], label = "Model 2")
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         ax.set_ylabel("error")
         
         # Create a new DataFrame
-        df = pd.DataFrame({
-            'Date': x,
-            'Error': self.error_history[1:]
-        })
+        #df = pd.DataFrame({
+         #   'Date': x,
+          #  'Error': self.error_history[1:]
+        #})
         
-        df.to_csv('error_model2.csv', index=False)
-        return fig
+        #df.to_csv('error_model2.csv', index=False)
+        #return fig
         
         
         ### save error history data

@@ -42,7 +42,7 @@ def prepare_enkf(num_agents:int, ensemble_size:int, macro_state_dim: int):
      "start_year": 1990 }
 
 
-    enkf = EnsembleKalmanFilter(Model1, filter_params, model_params)
+    enkf = EnsembleKalmanFilter(Model1, filter_params, model_params, 0.5)
     print("EnKF micro state ensemble:\n", enkf.micro_state_ensemble)
     print("EnKF macro state ensemble:\n", enkf.macro_state_ensemble)
 
@@ -50,13 +50,13 @@ def prepare_enkf(num_agents:int, ensemble_size:int, macro_state_dim: int):
 
 def run_enkf(enkf):
 
-    time_horizon = 10 ## 29 years * 12 months
+    time_horizon = 29*12 ## 29 years * 12 months
     for i in tqdm(range(time_horizon), desc="Iterations"):
         #if i == 1: break
         ### set update to false or true
-        if i % 5 != 0 or i == 0:
+        if i % 50 != 0 or i == 0:
             enkf.step(update = False)
-            test = enkf.plot_macro_state(False)
+            #test = enkf.plot_macro_state(False)
         else:
             enkf.step(update = True)
 
@@ -67,9 +67,11 @@ def plot_enkf(enkf):
     enkf.plot_fanchart(ax) ### now an axis needs to be passed to this plot 
     enkf.plot_error()
 
+
+'''
 if __name__=="__main__":
     ### if num_agents >= 100 then macro_state_dim = 4, otherwise = 3
-    enkf1 = prepare_enkf(num_agents=10, ensemble_size= 5, macro_state_dim = 3)
+    enkf1 = prepare_enkf(num_agents=100, ensemble_size= 30, macro_state_dim = 4)
     run_enkf(enkf1)
     plot_enkf(enkf1)
 
@@ -108,4 +110,4 @@ df3.to_csv('current_obs_example.csv', index=False)
 df4.to_csv('current_obs_var_example.csv', index=False)
 # Save array to CSV file
 np.savetxt('H_example.csv', H, delimiter=',')
-
+'''

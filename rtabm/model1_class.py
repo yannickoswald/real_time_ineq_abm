@@ -211,7 +211,7 @@ class Model1():
         #ax.set_yticklabels(['0%', '0%', '10%', '20%', '30%', '40%', '50%', '60%'])
         ax.set_ylabel("wealth share")
         ax.margins(0)
-        ax.text(0,0.85, 'a',  fontsize = 12)
+        #ax.text(0,0.85, 'a',  fontsize = 12)
         
         ### convert wealth group data to array
         result_array = np.column_stack([np.array(lst) for lst in wealth_groups_t_data])
