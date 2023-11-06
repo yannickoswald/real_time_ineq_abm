@@ -50,8 +50,8 @@ class benchmarking_error_simple:
         :return: float, the average error metric
         """
         # Ensure dimensions are correct
-        #assert model_output.shape == (model_output.shape[0], 4), "Model output should have shape [n, 4]"
-        #assert data_vector.shape == (data_vector.shape[0], 4), "Data vector should have shape [n, 4]"
+        assert model_output.shape == (model_output.shape[0], 4), "Model output should have shape [n, 4]"
+        assert data_vector.shape == (data_vector.shape[0], 4), "Data vector should have shape [n, 4]"
         # Calculate absolute differences between the model output and data vector
         abs_diffs = np.abs(model_output - data_vector)    
         # sum differences across four wealth groups as in equation 6 of the paper

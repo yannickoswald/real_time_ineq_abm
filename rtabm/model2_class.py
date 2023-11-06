@@ -175,7 +175,10 @@ class Model2:
         #ax.legend(loc=(1.05, 0.45), frameon = False)
         ax.margins(0)
         #ax.text(0,0.85, 'b', fontsize = 12)
-        return y 
+        ### convert wealth group data to array
+        result_array = np.column_stack([np.array(lst) for lst in wealth_groups_t_data])
+        return result_array
+        
         
     def write_data_for_plots(self):
         
