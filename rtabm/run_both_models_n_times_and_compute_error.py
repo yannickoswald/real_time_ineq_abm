@@ -54,8 +54,11 @@ class benchmarking_error_simple:
         assert data_vector.shape == (data_vector.shape[0], 4), "Data vector should have shape [n, 4]"
         # Calculate absolute differences between the model output and data vector
         abs_diffs = np.abs(model_output - data_vector)    
-        # sum differences across four wealth groups as in equation 6 of the paper
+        # sum differences across four wealth groups as in equation 6 of the paper first summation sign
+        # second summation sign and average is over ensemble runs and done in compute error 
         abs_diffs_sum = np.sum(abs_diffs, axis = 1)
+        ## take mean of
+        #abs_diffs_mean = np.mean(abs_diffs, axis = 1)
         # Return the average absolute difference as well as the error per group
         return abs_diffs_sum
 
@@ -67,15 +70,15 @@ class benchmarking_error_simple:
        
        """
        ## run models n times and write out data 
-       for i in range(self.ensemble_size):
+       for i in tqdm(range(self.ensemble_size), desc = "Model error estimate without ENKF"):
             # Set up both model economies
-            economy1 = Model1(population_size=500,
+            economy1 = Model1(population_size=100,
                               growth_rate=0.025, 
                               b_begin=1.3,
                               distribution="Pareto_lognormal",
                               start_year=1990)
         
-            economy2 = Model2(500,
+            economy2 = Model2(100,
                           concavity=1,
                           growth_rate = 0.025, 
                           start_year = 1990,
@@ -86,7 +89,7 @@ class benchmarking_error_simple:
             ### initialize model 1
             economy1.make_agents()
             ### run the models
-            for i in tqdm(range(time_horizon)):
+            for i in range(time_horizon):
                 economy1.step()
                 economy2.step()
             fig, (ax1, ax2) = plt.subplots(1, 2,figsize=(10,4))
@@ -118,6 +121,7 @@ class benchmarking_error_simple:
             errors_model1[:,i] = self.quantify_error(self.model1_data[i], data_array)
             errors_model2[:,i] = self.quantify_error(self.model2_data[i], data_array)
             
+        # Second summation sign and averaging in equation 6
         self.mean_error_model1 = np.mean(errors_model1,axis = 1)
         self.mean_error_model2 = np.mean(errors_model2,axis = 1)
         
@@ -165,8 +169,8 @@ class benchmarking_error_simple:
 
 enkf1 = prepare_enkf(num_agents=100, ensemble_size=30, macro_state_dim=4)
 enkf2 = prepare_enkf2(num_agents=100, ensemble_size=30, macro_state_dim=4)
-run_enkf(enkf1)
-run_enkf(enkf2)
+run_enkf(enkf1, time_horizon = 29*12)
+run_enkf(enkf2, time_horizon = 29*12)
 
 
 benchmark = benchmarking_error_simple(30)
@@ -194,17 +198,34 @@ enkf2.plot_fanchart(ax3)
 benchmark.plot_graph(ax4)
 
 ###EXTRAS
-ax1.legend(loc=(1.05, -0.55), frameon = False)
+#AX0
+ax0.text(0,0.85, 'a', fontsize = 12)
+ax0.text(40,0.85, 'Model 1', fontsize = 12)
+
+
+#AX1
+ax1.legend(loc=(1.05, -0.15), frameon = False)
+ax1.text(0,0.85, 'b', fontsize = 12)
+ax1.text(40,0.85, 'Model 2', fontsize = 12)
+
+#AX2
 ax2.text(0,1.05, 'c', fontsize = 12)
 ax2.set_yticklabels(['0%', '20%', '40%', '60%', '80%', '100%'])
+ax2.text(40,1.05, 'Model 1', fontsize = 12)
+
+#AX3
 ax3.set_yticklabels(['0%', '20%', '40%', '60%', '80%', '100%'])
 ax3.text(0,1.05, 'd', fontsize = 12)
+ax3.text(40, 1.05, 'Model 2', fontsize = 12)
+
+
+#AX4
 # Get the limits
 x_min, x_max = ax4.get_xlim()
 y_min, y_max = ax4.get_ylim()
 ax4.text(0,y_max+0.02, 'e', fontsize = 12)
 plt.tight_layout()
-#plt.savefig('fig2.png', dpi = 300)
+plt.savefig('fig2.png', dpi = 300)
 
 plt.show()
 

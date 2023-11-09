@@ -43,18 +43,18 @@ def prepare_enkf(num_agents:int, ensemble_size:int, macro_state_dim: int):
 
 
     enkf = EnsembleKalmanFilter(Model1, filter_params, model_params, 0.5)
-    print("EnKF micro state ensemble:\n", enkf.micro_state_ensemble)
-    print("EnKF macro state ensemble:\n", enkf.macro_state_ensemble)
+    #print("EnKF micro state ensemble:\n", enkf.micro_state_ensemble)
+    #print("EnKF macro state ensemble:\n", enkf.macro_state_ensemble)
 
     return enkf
 
-def run_enkf(enkf):
+def run_enkf(enkf, time_horizon):
 
-    time_horizon = 29*12 ## 29 years * 12 months
-    for i in tqdm(range(time_horizon), desc="Iterations"):
+    #time_horizon = 29*12 ## 29 years * 12 months
+    for i in tqdm(range(time_horizon), desc="Iterations ENKF Model 1"):
         #if i == 1: break
         ### set update to false or true
-        if i % 50 != 0 or i == 0:
+        if i % 20 != 0 or i == 0:
             enkf.step(update = False)
             #test = enkf.plot_macro_state(False)
         else:

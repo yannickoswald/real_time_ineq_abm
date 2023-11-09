@@ -62,6 +62,7 @@ class EnsembleKalmanFilter:
         self.macro_history_share = list()
         self.micro_history = list()
         self.error_history = list()
+        
         # Set up ensemble of models and other global properties
         self.population_size = model_params["population_size"]  
         ### set up storage for data history. Macro-history consists of 4 groups
@@ -211,7 +212,7 @@ class EnsembleKalmanFilter:
         H = np.zeros((dim_micro_state, dim_data))
         L = self.micro_state_vector_length
         ## check whether there are at least 100 agents
-        print("this is dim micro", dim_micro_state)
+        #print("this is dim micro", dim_micro_state)
         if dim_micro_state >= 100:
             H[:int(round(L*0.01)),0] = 1/(L*0.01) ### H entries are normalized
             H[int(round(L*0.01)):int(round(L*0.1)),1] = 1/(L*0.09) #next 9%
@@ -567,7 +568,7 @@ class EnsembleKalmanFilter:
             q = np.multiply(m, n)
             p = total_wealth_ts
             A = np.divide(q, p) 
-            print('this is A', A)
+            #print('this is A', A)
             self.macro_history_share.append(A)
         
         #### Make 4 arrays for all time steps so far for all of the 4 wealth
@@ -644,9 +645,15 @@ class EnsembleKalmanFilter:
             
             # Calculate absolute differences between the model output and data vector
             abs_diffs = np.abs(model_output - data_vector)
+            
+            
+            # sum differences across four wealth groups as in equation 6 of the paper first summation sign
+            # second summation sign and average is over ensemble runs and done in compute error 
+            # sum differences across four wealth groups as in equation 6 of the paper
+            abs_diffs_sum = np.sum(abs_diffs, axis = 1)
         
             # Return the average absolute difference as well as the error per group
-            return abs_diffs, abs_diffs.mean()
+            return abs_diffs, abs_diffs.mean(), abs_diffs_sum
     
     def record_error(self):
         """
@@ -683,7 +690,7 @@ class EnsembleKalmanFilter:
         ### calculate wealth shares
         a4 = np.divide(a1, a3)
         current_error = self.quantify_error(a4.T, share_obs)
-        self.error_history.append(current_error[1])
+        self.error_history.append(current_error[2])
         
         
         
@@ -697,7 +704,8 @@ class EnsembleKalmanFilter:
         #fig, ax = plt.subplots(figsize=(10,4))
         L = np.shape(self.macro_history_share[0][:,1:])[1]
         x = self.obs["date_short"][::4].reset_index(drop = True).iloc[:L]
-        ax.plot(x, np.array(self.error_history)[1:], label = "Model 1")
+        ### here the np.mean is again the second summation in eq. 6 and the averaging
+        ax.plot(x, np.mean(np.array(self.error_history),axis=1)[1:], label = "Model 1")
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         ax.set_ylabel("error")
@@ -714,6 +722,15 @@ class EnsembleKalmanFilter:
         
         #df.to_csv('error_model1.csv', index=False)
         ### save error history data
+        
+        
+    def integral_error(self):
+        
+        
+        #if you look at figure 2 or 3 here we sum the integral under curves in panel e 
+    
+        return np.sum(np.mean(np.array(self.error_history),axis = 1))
+    
 
     def step(self, update: bool):
         

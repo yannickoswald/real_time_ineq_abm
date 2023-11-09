@@ -489,7 +489,7 @@ class EnsembleKalmanFilter2:
         for i in range(len(multipliers)):
             ### here we make the total wealth calculation. 
             m = self.macro_history[i][:,1:]
-            print("this is m", m)
+            #print("this is m", m)
             n = multipliers[i]
             total_wealth_ts += np.multiply(m,n)    
         
@@ -581,9 +581,7 @@ class EnsembleKalmanFilter2:
         abs_diffs_sum = np.sum(abs_diffs, axis = 1)
     
         # Return the average absolute difference as well as the error per group
-        return abs_diffs, abs_diffs.mean(), np.mean(abs_diffs_sum, axis = 0)
-    
-    
+        return abs_diffs, abs_diffs.mean(), abs_diffs_sum
     
     
     def record_error(self):
@@ -627,10 +625,15 @@ class EnsembleKalmanFilter2:
         #fig, ax = plt.subplots(figsize=(10,4))
         L = np.shape(self.macro_history_share[0][:,1:])[1]
         x = self.obs["date_short"][::4].reset_index(drop = True).iloc[:L]
-        ax.plot(x, np.array(self.error_history)[1:], label = "Model 2")
+        ax.plot(x, np.mean(np.array(self.error_history),axis=1)[1:], label = "Model 2")
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         ax.set_ylabel("error")
+        
+    def integral_error(self):
+        
+        #if you look at figure 2 or 3 here we sum the integral under curves in panel e 
+        return np.sum(np.mean(np.array(self.error_history),axis = 1))
         
         # Create a new DataFrame
         #df = pd.DataFrame({
