@@ -19,7 +19,7 @@ class Model2:
     
     ''' Implements a network-based agent-based model '''
     
-    def __init__(self, population_size, concavity, growth_rate, start_year, adaptive_sensitivity):
+    def __init__(self, population_size, concavity, growth_rate, start_year, adaptive_sensitivity, uncertainty_para):
         self.num_agents = population_size
         self.agents = [Agent2(i, self, adaptive_sensitivity) for i in range(population_size)]
         self.graph = self.create_network()
@@ -32,6 +32,7 @@ class Model2:
         self.micro_state = None
         self.macro_state_vectors = [] ### wealth group data 
         self.micro_state_vectors = [] ### system state on agent level
+        self.uncertainty_para = uncertainty_para
 
     def create_network(self):
         """Create a graph with Barabasi-Albert degree distribution and place

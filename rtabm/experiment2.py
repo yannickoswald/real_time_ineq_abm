@@ -17,13 +17,12 @@ from model1_class import Model1
 from run_enkf import *
 ### MODEL 2 infrastructure
 from model2_class import Model2
-from run_enkf2 import *
 #from run_both_models_n_times_and_compute_error import *
 
 
 #%%
 ''' this experiment investigate the influence 
-of the ensemble size on the ENKF performance '''
+of the filter frequency on the ENKF performance '''
 
 ##### for this experiment change the test period to a much shorter one
 import numpy as np
@@ -32,28 +31,52 @@ from tqdm import tqdm
 
 # Assuming 'prepare_enkf', 'prepare_enkf2', 'run_enkf', and 'run_enkf2' are defined elsewhere
 
-class Enkf_experiment3:
+class Enkf_experiment2:
     
-    def __init__(self, num_agents, macro_state_dim, repetitions, ensemble_sizes):
+    def __init__(self, num_agents, macro_state_dim, repetitions, filter_frequencies):
         self.num_agents = num_agents
         self.macro_state_dim = macro_state_dim
         self.repetitions = repetitions
-        self.ensemble_sizes = ensemble_sizes
+        self.filter_frequencies = filter_frequencies ### if = 10 then every 10th time steps etc.
         self.results = []
         
-    def run_experiment(self):
-        for size in self.ensemble_sizes:
+    def run_experiment(self, time_horizon):
+        
+        model_params1 = {"population_size": 100,
+         "growth_rate": 0.025,
+         "b_begin": 1.3,
+         "distribution": "Pareto_lognormal",
+         "start_year": 1990,
+         "uncertainty_para": 0}
+        
+        model_params2 = {"population_size": 100, 
+                        "concavity": 1,
+                        "growth_rate": 0.025, 
+                        "start_year": 1990,
+                        "adaptive_sensitivity": 0.02,
+                        "uncertainty_para": 0}
+
+        for freq in self.filter_frequencies:
             array_of_results_enkf1 = np.zeros((self.repetitions, 1))
             array_of_results_enkf2 = np.zeros((self.repetitions, 1))
-            for i in tqdm(range(self.repetitions), desc=f"Ensemble size {size} repetitions"):
-                enkf1 = prepare_enkf(num_agents=self.num_agents, ensemble_size=size, macro_state_dim=self.macro_state_dim)
-                enkf2 = prepare_enkf2(num_agents=self.num_agents, ensemble_size=size, macro_state_dim=self.macro_state_dim)
-                run_enkf(enkf1)
-                run_enkf2(enkf2)
+            for i in tqdm(range(self.repetitions), desc=f"Filter frequency {freq} repetitions"):
+                enkf1 = prepare_enkf(Model1,
+                                          model_params= model_params1,
+                                          ensemble_size = 10,
+                                          macro_state_dim = self.macro_state_dim,
+                                          filter_freq = freq,
+                                          uncertainty_obs = 0.05)
+                enkf2 = prepare_enkf(Model2, model_params= model_params2,
+                                          ensemble_size = 10,
+                                          macro_state_dim = self.macro_state_dim,
+                                          filter_freq = freq,
+                                          uncertainty_obs = 0.05)
+                run_enkf(enkf1, time_horizon, freq)
+                run_enkf(enkf2, time_horizon, freq)
                 array_of_results_enkf1[i, 0] = enkf1.integral_error()
                 array_of_results_enkf2[i, 0] = enkf2.integral_error()
                 
-            self.results.append([f'Ensemble size {size}', array_of_results_enkf1, array_of_results_enkf2])
+            self.results.append([f'Filter frequency {freq}', array_of_results_enkf1, array_of_results_enkf2])
     
     def plot_results(self, save_fig=False, fig_name='fig5.png'):
         fig, ax = plt.subplots()
@@ -78,7 +101,7 @@ class Enkf_experiment3:
         ax.set_xticklabels([label for label, _, _ in self.results])
         ax.set_ylabel('Error sum under curve of mean error')
         legend_labels = ['Model1 ENKF Boxplot', 'Model 2 ENKF Boxplot']
-        ax.legend(boxplot_artists, legend_labels, title='Legend', loc="upper right", frameon=False)
+        ax.legend(boxplot_artists, legend_labels, title='Legend', loc="upper left", frameon=False)
 
         plt.tight_layout()
         if save_fig:
@@ -101,12 +124,12 @@ class Enkf_experiment3:
         # Transform to log space for linear regression
         log_means1 = np.log(means1)
         log_means2 = np.log(means2)
-        log_ensemble_sizes = np.log(self.ensemble_sizes)
+        log_filter_frequencies = np.log(self.filter_frequencies)
 
         # Perform the linear regression in log space
         # The slope will be the exponent b and the intercept will be log(a)
-        slope1, intercept1 = np.polyfit(log_ensemble_sizes, log_means1.ravel(), 1)
-        slope2, intercept2 = np.polyfit(log_ensemble_sizes, log_means2.ravel(), 1)
+        slope1, intercept1 = np.polyfit(log_filter_frequencies, log_means1.ravel(), 1)
+        slope2, intercept2 = np.polyfit(log_filter_frequencies, log_means2.ravel(), 1)
 
         # Convert intercept into the coefficient a in the original space
         a1 = np.exp(intercept1)
@@ -118,10 +141,11 @@ class Enkf_experiment3:
 # To use the class
 num_agents = 100
 macro_state_dim = 4
-repetitions = 20
-ensemble_sizes = [5,10,30,100]
+repetitions = 5
+time_horizon = 3*12
+filter_frequencies = [2, 20] #[2, 5, 10, 20, 50, 100] # [20,100] #
 
-experiment = Enkf_experiment3(num_agents, macro_state_dim, repetitions, ensemble_sizes)
-experiment.run_experiment()
+experiment = Enkf_experiment2(num_agents, macro_state_dim, repetitions, filter_frequencies)
+experiment.run_experiment(time_horizon)
 experiment.plot_results(save_fig=True)
 elasticities = experiment.compute_elasticity_fit()

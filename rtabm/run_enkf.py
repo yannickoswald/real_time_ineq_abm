@@ -15,7 +15,7 @@ from inequality_metrics import find_wealth_groups
 from enkf_yo import EnsembleKalmanFilter
 
 
-def prepare_enkf(num_agents:int, ensemble_size:int, macro_state_dim: int):
+def prepare_enkf(Model, model_params, ensemble_size, macro_state_dim, filter_freq, uncertainty_obs):
     
     assert macro_state_dim == 3 or macro_state_dim == 4 , "Incorrect dimensions for macro state."
 
@@ -33,28 +33,30 @@ def prepare_enkf(num_agents:int, ensemble_size:int, macro_state_dim: int):
     ### of 4 wealth groups top 1%, top 10% etc.
     filter_params = {"ensemble_size": ensemble_size,
                      "macro_state_vector_length": macro_state_dim,
-                     "micro_state_vector_length": num_agents}
+                     "micro_state_vector_length": model_params["population_size"]}
 
-    model_params = {"population_size": num_agents,
-     "growth_rate": 0.025,
-     "b_begin": 1.3,
-     "distribution": "Pareto_lognormal",
-     "start_year": 1990 }
-
-
-    enkf = EnsembleKalmanFilter(Model1, filter_params, model_params, 0.5)
+    enkf = EnsembleKalmanFilter(Model, filter_params, model_params, constant_a = uncertainty_obs, filter_freq = filter_freq)
     #print("EnKF micro state ensemble:\n", enkf.micro_state_ensemble)
     #print("EnKF macro state ensemble:\n", enkf.macro_state_ensemble)
 
     return enkf
 
-def run_enkf(enkf, time_horizon):
+def run_enkf(enkf, time_horizon, filter_freq):
+    
+    # Set a default value for filter_freq if not provided
+    if filter_freq is None:
+        filter_freq = 30  # default value, can be adjusted as needed
+
+    # Ensure filter_freq is not zero to avoid division by zero error
+    if filter_freq == 0:
+        raise ValueError("filter_freq cannot be zero.")
 
     #time_horizon = 29*12 ## 29 years * 12 months
     for i in tqdm(range(time_horizon), desc="Iterations ENKF Model 1"):
+    #for i in range(time_horizon):    
         #if i == 1: break
         ### set update to false or true
-        if i % 20 != 0 or i == 0:
+        if i % filter_freq != 0 or i == 0:
             enkf.step(update = False)
             #test = enkf.plot_macro_state(False)
         else:

@@ -22,7 +22,7 @@ class EnsembleKalmanFilter:
     A class to represent a EnKF for application with a wealth 
     agent-based model for the United States.
     """
-    def __init__(self, model, filter_params, model_params, constant_a):
+    def __init__(self, model, filter_params, model_params, constant_a, filter_freq):
         """
         Initialise the Ensemble Kalman Filter.
         
@@ -51,14 +51,14 @@ class EnsembleKalmanFilter:
         self.macro_state_vector_length = None
         self.micro_state_vector_length = None
         self.population_size = None
+        self.filter_frequency = filter_freq
         # Get filter attributes from params, warn if unexpected attribute
         for k, v in filter_params.items():
              if not hasattr(self, k):
                  w = 'EnKF received unexpected {0} attribute.'.format(k) 
                  warns.warn(w, RuntimeWarning)
              setattr(self, k, v)
-              
- 
+
         self.macro_history_share = list()
         self.micro_history = list()
         self.error_history = list()
@@ -131,7 +131,7 @@ class EnsembleKalmanFilter:
        using the specified constant 'a' and the formula (a * real_wealth_per_unit)^2.
        """
        if 'real_wealth_per_unit' in self.data:
-           self.data['variance_real_wealth'] = (a * self.data['real_wealth_per_unit']) ** 2
+           self.obs['variance_real_wealth'] = (a * self.data['real_wealth_per_unit']) ** 2
        else:
            raise ValueError("The dataframe does not have the required 'real_wealth_per_unit' column.")
     
@@ -262,11 +262,17 @@ class EnsembleKalmanFilter:
         ''' TO DO track entire data ensemble !!! '''
         
         r = np.mean(self.data_ensemble, 1)[:,None] ## r for intermediate result
+        
+        #print("this is data_ensemble in enkf", self.data_ensemble)
+        
         p = self.population_size
         if p >= 100:
             pop = np.array([0.01*p,0.09*p,0.4*p,0.5*p])[:, None]
             r2 = np.multiply(r,pop)
             d = np.where(r2 > 0)
+            
+            #print("this is r2 in enkf", r2)
+            
             r3 = r2 / np.sum(r2[d])
             self.data_ensemble_history_average.append(r3)
             self.data_ensemble_history.append(self.data_ensemble)
@@ -527,6 +533,49 @@ class EnsembleKalmanFilter:
             self.macro_history[count] = np.concatenate((value, x), axis = 1)
         self.micro_history.append(self.micro_state_ensemble)
         
+        
+    def make_macro_history_share(self):
+        
+        A = None ## placeholder for macro_history as wealth shares
+        ### PLOT empirical monthly wealth Data vs model output for chosen time-frame
+        colors = ["tab:red", "tab:blue", "grey", "y"]
+        
+        ## control for population size
+    
+        if self.population_size >= 100:
+            wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
+            
+            multipliers = [int(0.01*self.population_size),
+                            int(0.09*self.population_size),
+                            int(0.4*self.population_size),
+                            int(0.5*self.population_size)]
+        else:
+            wealth_groups = ["Top 10%", "Middle 40%", "Bottom 50%"]
+            multipliers = [int(0.1*self.population_size),
+                                int(0.4*self.population_size),
+                                int(0.5*self.population_size)]
+            
+        #### compute total_wealth time series
+        total_wealth_ts = np.zeros(shape=(self.ensemble_size, self.time))
+        
+    
+        for i in range(len(multipliers)):
+            ### here we make the total wealth calculation. ## needs to be flexible
+            ### for different size populations
+            m = self.macro_history[i][:,1:]
+            n = multipliers[i]
+            total_wealth_ts += np.multiply(m,n)  
+            #print("this is total_wealth_ts", total_wealth_ts)
+        
+        for i in range(len(multipliers)):
+            m = self.macro_history[i][:,1:]
+            n = multipliers[i]
+            q = np.multiply(m, n)
+            p = total_wealth_ts
+            A = np.divide(q, p) 
+            #print('this is A', A)
+            self.macro_history_share.append(A)
+        
     def plot_fanchart(self, ax): 
         
         '''make fanchart of model runs over wealth share by group
@@ -560,7 +609,8 @@ class EnsembleKalmanFilter:
             ### for different size populations
             m = self.macro_history[i][:,1:]
             n = multipliers[i]
-            total_wealth_ts += np.multiply(m,n)    
+            total_wealth_ts += np.multiply(m,n)  
+            print("this is total_wealth_ts", total_wealth_ts)
         
         for i in range(len(multipliers)):
             m = self.macro_history[i][:,1:]
@@ -607,7 +657,15 @@ class EnsembleKalmanFilter:
             #ax.plot(x,y[1:], label = g, color = colors[i], linestyle = '--')
             ### plot actual observations
             ax.plot(x,l, label = g, color = colors[i], linestyle = 'dotted')
-
+        '''
+               for i in range(len(self.data_ensemble_history_average)):
+                   if i % self.filter_frequency != 0 or i == 0:
+                       pass
+                   else:
+                       for data_point in self.data_ensemble_history_average[i]:
+                           ax.scatter(i, data_point, marker='x',  color='black', s=100)
+                  
+          ''' 
         #ax.set_xlabel("time")
         ax.set_ylabel("wealth share")
         ax.set_ylim((0,1))
@@ -620,8 +678,41 @@ class EnsembleKalmanFilter:
         #ax.legend([f'{o}' for o in legend_items],
          #         frameon = False, bbox_to_anchor = (1.25, 0.6), loc='center right')
         ax.margins(x=0)
+        
+        
+    def post_update_difference(self):
+        
+        
+        ### set up data collection which collects all differences between model state
+        ### and the data points of the four wwealth groups post up date step
+        ### we need this analysis/data in order to check whether the enkf works correctly
+        ### in the sense that if variance in model is high the, the enkf should emphasize the data 
+        ### and if variance in data is high it should emphasize the model
+        
+        sum_diff_model_data_list = []
+        
+        for i in range(len(self.data_ensemble_history_average)):
+            
+            ### if not filter step do not do anything
+            if i % self.filter_frequency != 0 or i == 0:
+                pass
+            else: ### if filter step start looping over four data ensembles wealth groups for and measure their difference to model ensemble 
+                sum_diff_model_data = 0
+                for idx, data_point in enumerate(self.data_ensemble_history_average[i]):
+                    #print("this is np.mean(self.macro_history_share[idx][:,i]", np.mean(self.macro_history_share[idx][:,i]))
+                    #print("this data_point", data_point)
+                    diff_model_data_point = abs(np.mean(self.macro_history_share[idx][:,i]) - data_point)
+                    sum_diff_model_data += diff_model_data_point
+                sum_diff_model_data_list.append(sum_diff_model_data)
+        
+        ### now sum all sums of differences (first sum across the four wealth groups) across time
+        #print("sum_diff_model_data_list", sum_diff_model_data_list)
+        total_sum = sum(sum_diff_model_data_list)
+        #print("this is total sum", total_sum)
+        return total_sum
+                
        
-    
+
     def quantify_error(self, model_output, data_vector):
             
             """

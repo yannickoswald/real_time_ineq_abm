@@ -614,7 +614,6 @@ class EnsembleKalmanFilter2:
         self.error_history.append(current_error[2])
         
         
-        
     def plot_error(self, ax):
         
         ''' this function plots the error over time which is defined as the 

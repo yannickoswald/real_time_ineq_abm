@@ -28,10 +28,12 @@ class Model1():
                  growth_rate,
                  b_begin,
                  distribution: str,
-                 start_year
+                 start_year,
+                 uncertainty_para
                  ):
         
         ### set economy (global) attributes
+        self.uncertainty_para = uncertainty_para 
         self.start_year = start_year
         self.num_agents = population_size  
         self.growth_rate_economy = (1+growth_rate)**(1/12) - 1## ~growth_rate / 12 ### MONTHLY growth rate
@@ -94,8 +96,8 @@ class Model1():
                     a_wealth = powerlognorm.rvs(1.92, 2.08, size=1)*scale_coeff
             else:
                 raise Exception(f"Unrecognised distribution: {self.distr}")
-            ## introduce variable q only for aesthetic purpose
-            q = self.economy_beta
+            ## introduce variable q only for clarity
+            q = self.economy_beta # + np.random.normal(0, 0.1*self.economy_beta)
              ## create agent
             agents.append(Agent1(i, a_wealth, self, q))
         return agents

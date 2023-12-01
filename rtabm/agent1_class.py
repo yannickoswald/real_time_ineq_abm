@@ -68,7 +68,8 @@ class Agent1():
        ### control for this otherwise the agent wealth weights do not make much sense
        ### for the selection of an agent to distribute more wealth
        if self.wealth > 0: 
-           z = ((self.wealth**self.beta) / self.economy.sum_power)
+           z = ((self.wealth**(self.beta+np.random.normal(0,  self.economy.uncertainty_para*self.beta)) / self.economy.sum_power)) 
+            ## create agent
        else: 
            z = 0.8
            

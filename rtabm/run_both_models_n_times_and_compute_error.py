@@ -16,7 +16,7 @@ from model1_class import Model1
 from run_enkf import *
 ### MODEL 2 infrastructure
 from model2_class import Model2
-from run_enkf2 import *
+
 
 import pandas as pd
 
@@ -76,13 +76,15 @@ class benchmarking_error_simple:
                               growth_rate=0.025, 
                               b_begin=1.3,
                               distribution="Pareto_lognormal",
-                              start_year=1990)
+                              start_year=1990,
+                              uncertainty_para = 0.1)
         
             economy2 = Model2(100,
                           concavity=1,
                           growth_rate = 0.025, 
                           start_year = 1990,
-                          adaptive_sensitivity=0.02)
+                          adaptive_sensitivity=0.02,
+                          uncertainty_para = 0)
         
             ## define time horizon
             time_horizon = 29*12 ## 29 years * 12 months | from Jan 1990 to Dec 2018
@@ -167,12 +169,28 @@ class benchmarking_error_simple:
 
 #%% benchmarking fangraph of both models 
 
-enkf1 = prepare_enkf(num_agents=100, ensemble_size=30, macro_state_dim=4)
-enkf2 = prepare_enkf2(num_agents=100, ensemble_size=30, macro_state_dim=4)
-run_enkf(enkf1, time_horizon = 29*12)
-run_enkf(enkf2, time_horizon = 29*12)
 
+period_length = 29*12
+model_params1 = {"population_size": 100,
+ "growth_rate": 0.025,
+ "b_begin": 1.3,
+ "distribution": "Pareto_lognormal",
+ "start_year": 1990,
+ "uncertainty_para": 0.1}
 
+model_params2 = {"population_size": 100, 
+                "concavity": 1,
+                "growth_rate": 0.025, 
+                "start_year": 1990,
+                "adaptive_sensitivity": 0.02,
+                "uncertainty_para": 0}
+
+enkf1 = prepare_enkf(Model1, model_params1, uncertainty_obs = 0.5, ensemble_size=10, macro_state_dim=4, filter_freq=20)
+enkf2 = prepare_enkf(Model2, model_params2, uncertainty_obs = 0.5, ensemble_size=10, macro_state_dim=4, filter_freq=20)
+run_enkf(enkf1, time_horizon = period_length, filter_freq = 500)
+run_enkf(enkf2, time_horizon = period_length, filter_freq = 500)
+
+#### RUN BENCHMARK CLASS FROM ABOVE WHICH IS DIFFERENT FROM THE PREPARE ENKF 
 benchmark = benchmarking_error_simple(30)
 benchmark.collect_data()
 benchmark.compute_error()
@@ -191,8 +209,8 @@ ax3 = plt.subplot(gs[1, 1])
 ax4 = plt.subplot(gs[2, :])  # This one spans both columns
 
 
-enkf1.models[0].plot_wealth_groups_over_time(ax0, 29*12)
-enkf2.models[0].plot_wealth_groups_over_time(ax1, 29*12)
+enkf1.models[0].plot_wealth_groups_over_time(ax0, period_length)
+enkf2.models[0].plot_wealth_groups_over_time(ax1, period_length)
 enkf1.plot_fanchart(ax2)
 enkf2.plot_fanchart(ax3)
 benchmark.plot_graph(ax4)
