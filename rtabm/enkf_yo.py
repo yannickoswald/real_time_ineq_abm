@@ -306,6 +306,7 @@ class EnsembleKalmanFilter:
         state_covariance = self.H @ C @ self.H.T
         diff = state_covariance + self.data_covariance
         self.Kalman_Gain = C @ self.H.T @ np.linalg.inv(diff)
+        
     
         '''
         Keiran version original
@@ -314,6 +315,7 @@ class EnsembleKalmanFilter:
         diff = state_covariance + self.data_covariance
         return C @ self.H_transpose @ np.linalg.inv(diff)
         '''
+        
         
     def state_update(self):
         """

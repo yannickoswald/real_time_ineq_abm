@@ -120,9 +120,11 @@ class Enkf_experiment5:
         cbar = plt.colorbar(contour, ax=ax, label='Average Error', extend='neither')
         
         # Set the labels for ticks if needed
+        
+        labels_yaxis = [x[0] for x in self.uncertainty_in_models]
     
         ax.set_xticks(ticks=np.arange( len(self.uncertainty_obs_values)), labels=self.uncertainty_obs_values)
-        ax.set_yticks(ticks=np.arange(len(self.uncertainty_in_models)), labels=self.uncertainty_in_models)
+        ax.set_yticks(ticks=np.arange(len(self.uncertainty_in_models)), labels=labels_yaxis)
     
         # Set the labels and title
         ax.set_xlabel('Uncertainty data', fontsize = 16) # see comment for self.results_model1
@@ -141,10 +143,10 @@ class Enkf_experiment5:
 num_agents = 100
 macro_state_dim = 4
 repetitions = 5
-ensemble_size = 10  # Example ensemble size
+ensemble_size = 20  # Example ensemble size
 filter_frequency = 10
-uncertainty_obs = [0.05, 0.1, 0.5, 1] ###[0.01, 0.1, 0.5, 1] #[0.1, 0.5, 2, 10]  # Example values for uncertainty_obs
-uncertainty_models = [(0.1, 0.1), (0.2, 0.2), (0.5, 0.5), (0.8, 0.8)]#[(0.1, 0.1), (0.2, 0.2), (0.5, 0.5), (0.8, 0.8)]
+uncertainty_obs = [0.05, 0.1, 0.4, 0.8, 1] ###[0.01, 0.1, 0.5, 1] #[0.1, 0.5, 2, 10]  # Example values for uncertainty_obs
+uncertainty_models = [(0.1, 0.1), (0.2, 0.2), (0.5, 0.5), (0.8, 0.8), (1, 1)]#[(0.1, 0.1), (0.2, 0.2), (0.5, 0.5), (0.8, 0.8)]
 experiment = Enkf_experiment5(num_agents,
                               macro_state_dim,
                               repetitions, 

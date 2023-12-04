@@ -111,9 +111,9 @@ model_params2 = {"population_size": 100,
                 "adaptive_sensitivity": 0.02,
                 "uncertainty_para": 0}
 
-experiment = Enkf_experiment4(num_agents=100, macro_state_dim=4, repetitions=2,
-                              ensemble_sizes= [5, 10, 15, 20, 25, 30], 
-                              filter_frequencies = [2, 5, 10, 20, 30, 50],
+experiment = Enkf_experiment4(num_agents=100, macro_state_dim=4, repetitions=5,
+                              ensemble_sizes= [5, 10, 30, 50, 100], 
+                              filter_frequencies = [2, 5, 10, 20, 100],
                               model_params1=model_params1, model_params2=model_params2)
 
 experiment.run_experiment()

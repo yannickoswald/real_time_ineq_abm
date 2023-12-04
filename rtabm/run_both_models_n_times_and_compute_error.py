@@ -185,8 +185,8 @@ model_params2 = {"population_size": 100,
                 "adaptive_sensitivity": 0.02,
                 "uncertainty_para": 0}
 
-enkf1 = prepare_enkf(Model1, model_params1, uncertainty_obs = 0.5, ensemble_size=10, macro_state_dim=4, filter_freq=20)
-enkf2 = prepare_enkf(Model2, model_params2, uncertainty_obs = 0.5, ensemble_size=10, macro_state_dim=4, filter_freq=20)
+enkf1 = prepare_enkf(Model1, model_params1, uncertainty_obs = 0.5, ensemble_size=20, macro_state_dim=4, filter_freq=20)
+enkf2 = prepare_enkf(Model2, model_params2, uncertainty_obs = 0.5, ensemble_size=20, macro_state_dim=4, filter_freq=20)
 run_enkf(enkf1, time_horizon = period_length, filter_freq = 500)
 run_enkf(enkf2, time_horizon = period_length, filter_freq = 500)
 
@@ -217,23 +217,23 @@ benchmark.plot_graph(ax4)
 
 ###EXTRAS
 #AX0
-ax0.text(0,0.85, 'a', fontsize = 12)
+ax0.text(0,0.85, 'A', fontsize = 12)
 ax0.text(40,0.85, 'Model 1', fontsize = 12)
 
 
 #AX1
 ax1.legend(loc=(1.05, -0.15), frameon = False)
-ax1.text(0,0.85, 'b', fontsize = 12)
+ax1.text(0,0.85, 'B', fontsize = 12)
 ax1.text(40,0.85, 'Model 2', fontsize = 12)
 
 #AX2
-ax2.text(0,1.05, 'c', fontsize = 12)
+ax2.text(0,1.05, 'C', fontsize = 12)
 ax2.set_yticklabels(['0%', '20%', '40%', '60%', '80%', '100%'])
 ax2.text(40,1.05, 'Model 1', fontsize = 12)
 
 #AX3
 ax3.set_yticklabels(['0%', '20%', '40%', '60%', '80%', '100%'])
-ax3.text(0,1.05, 'd', fontsize = 12)
+ax3.text(0,1.05, 'D', fontsize = 12)
 ax3.text(40, 1.05, 'Model 2', fontsize = 12)
 
 
@@ -241,17 +241,8 @@ ax3.text(40, 1.05, 'Model 2', fontsize = 12)
 # Get the limits
 x_min, x_max = ax4.get_xlim()
 y_min, y_max = ax4.get_ylim()
-ax4.text(0,y_max+0.02, 'e', fontsize = 12)
+ax4.text(0,y_max+0.01, 'E', fontsize = 12)
 plt.tight_layout()
 plt.savefig('fig2.png', dpi = 300)
 
 plt.show()
-
-#%%
-'''
-if __name__ == "__main__":
-    benchmark = benchmarking_error_simple(2)
-    benchmark.collect_data()
-    benchmark.compute_error()
-    benchmark.plot_graph()
-'''

@@ -85,19 +85,19 @@ class Experiment1:
 
         ###EXTRAS
         #AX0
-        ax0.text(0, 0.85, 'a', fontsize = 12)
+        ax0.text(0, 0.85, 'A', fontsize = 12)
         ax0.text(40, 0.85, 'Model 1', fontsize = 12)
         #AX1
         ax1.legend(loc=(1.05, -0.15), frameon = False) ### legend only here
-        ax1.text(0, 0.85, 'b', fontsize = 12)
+        ax1.text(0, 0.85, 'B', fontsize = 12)
         ax1.text(40, 0.85, 'Model 2', fontsize = 12)
         #AX2
-        ax2.text(0, 1.05, 'c', fontsize = 12)
+        ax2.text(0, 1.05, 'C', fontsize = 12)
         ax2.set_yticklabels(['0%', '20%', '40%', '60%', '80%', '100%'])
         ax2.text(40,1.05, 'Model 1', fontsize = 12)
         #AX3
         ax3.set_yticklabels(['0%', '20%', '40%', '60%', '80%', '100%'])
-        ax3.text(0,1.05, 'd', fontsize = 12)
+        ax3.text(0,1.05, 'D', fontsize = 12)
         ax3.text(40,1.05, 'Model 2', fontsize = 12)
 
         path = '..'
@@ -111,7 +111,8 @@ class Experiment1:
         # Get the limits
         x_min, x_max = ax4.get_xlim()
         y_min, y_max = ax4.get_ylim()
-        ax4.text(0, y_max+0.02, 'e', fontsize = 12)
+        ax4.text(0, y_max+0.02, 'E', fontsize = 12)
+        ax4.margins(0)
 
 
         plt.tight_layout()

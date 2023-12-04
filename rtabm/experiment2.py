@@ -141,9 +141,9 @@ class Enkf_experiment2:
 # To use the class
 num_agents = 100
 macro_state_dim = 4
-repetitions = 5
+repetitions = 20
 time_horizon = 3*12
-filter_frequencies = [2, 20] #[2, 5, 10, 20, 50, 100] # [20,100] #
+filter_frequencies = [2, 5, 10, 20, 100] # [20,100] #
 
 experiment = Enkf_experiment2(num_agents, macro_state_dim, repetitions, filter_frequencies)
 experiment.run_experiment(time_horizon)
