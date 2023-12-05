@@ -20,11 +20,11 @@ def prepare_enkf(Model, model_params, ensemble_size, macro_state_dim, filter_fre
     assert macro_state_dim == 3 or macro_state_dim == 4 , "Incorrect dimensions for macro state."
 
     ### LOAD empirical monthly wealth Data
-    with open(os.path.join("..", 'data', 'wealth_data_for_import.csv')) as f:
+    with open(os.path.join(".", 'data', 'wealth_data_for_import.csv')) as f:
         d1 = pd.read_csv(f, encoding = 'unicode_escape')
 
     ### LOAD empirical monthly wealth Data sorted by group for state vector check
-    with open(os.path.join("..", 'data', 'wealth_data_for_import2.csv')) as f2:
+    with open(os.path.join(".", 'data', 'wealth_data_for_import2.csv')) as f2:
         d2 = pd.read_csv(f2, encoding = 'unicode_escape')
 
 
