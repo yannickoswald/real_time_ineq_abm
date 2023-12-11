@@ -122,6 +122,13 @@ class EnsembleKalmanFilter:
                                                      "real_wealth_per_unit",
                                                      "variance_real_wealth"]]
         
+
+        # Set negative values in 'real_wealth_per_unit' to 1
+        #self.obs['real_wealth_per_unit'] = self.obs['real_wealth_per_unit'].apply(lambda x: 1 if x < 0 else x)
+
+        # Set negative values in 'real_wealth_share' to 0.005
+        #self.obs['real_wealth_share'] = self.obs['real_wealth_share'].apply(lambda x: 0.005 if x < 0 else x) 
+        
         # Update the 'variance_real_wealth' column
         self.update_variance_real_wealth(self.constant_a)
         
@@ -670,7 +677,7 @@ class EnsembleKalmanFilter:
           ''' 
         #ax.set_xlabel("time")
         ax.set_ylabel("wealth share")
-        ax.set_ylim((0,1))
+        ax.set_ylim((-0.05,1))
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         legend_items = ["Top 1%","__ci1","__ci2","__ci3", 

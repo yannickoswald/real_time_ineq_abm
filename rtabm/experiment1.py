@@ -19,7 +19,6 @@ from run_enkf import *
 from model2_class import Model2
 #from run_both_models_n_times_and_compute_error import *
 
-
 #%%
 
 
@@ -100,7 +99,7 @@ class Experiment1:
         ax3.text(0,1.05, 'D', fontsize = 12)
         ax3.text(40,1.05, 'Model 2', fontsize = 12)
 
-        path = '..'
+        path = '.'
         with open(os.path.join(path, 'data', 'mean_errors.csv')) as f:
             errors_df_no_enkf = pd.read_csv(f, encoding='unicode_escape')
 
@@ -121,7 +120,7 @@ class Experiment1:
 
 # Example usage
 if __name__ == "__main__":
-    time = 29*12
+    time = 1*12
     filter_freq = 30
     experiment1 = Experiment1(num_agents=100, 
                               ensemble_size=100, 
@@ -130,3 +129,5 @@ if __name__ == "__main__":
                               filter_freq = filter_freq)
     experiment1.run_both_enkf(time_horizon = time, filter_freq = filter_freq)
     experiment1.plot_results()
+
+# %%

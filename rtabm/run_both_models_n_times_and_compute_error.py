@@ -185,8 +185,8 @@ model_params2 = {"population_size": 100,
                 "adaptive_sensitivity": 0.02,
                 "uncertainty_para": 0}
 
-enkf1 = prepare_enkf(Model1, model_params1, uncertainty_obs = 0.5, ensemble_size=20, macro_state_dim=4, filter_freq=20)
-enkf2 = prepare_enkf(Model2, model_params2, uncertainty_obs = 0.5, ensemble_size=20, macro_state_dim=4, filter_freq=20)
+enkf1 = prepare_enkf(Model1, model_params1, uncertainty_obs = 0.5, ensemble_size=30, macro_state_dim=4, filter_freq=20)
+enkf2 = prepare_enkf(Model2, model_params2, uncertainty_obs = 0.5, ensemble_size=30, macro_state_dim=4, filter_freq=20)
 run_enkf(enkf1, time_horizon = period_length, filter_freq = 500)
 run_enkf(enkf2, time_horizon = period_length, filter_freq = 500)
 
