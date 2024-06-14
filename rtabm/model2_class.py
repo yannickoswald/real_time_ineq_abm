@@ -13,15 +13,19 @@ import numpy as np
 from scipy.stats import powerlognorm
 import pandas as pd
 from agent2_class import Agent2
+from exponential_pareto_avg_distr import weighted_avg_exp_pareto_distr
+from exponential_pareto_avg_distr import map_percentiles_weights
+from exponential_pareto_avg_distr import uniform_sample
 
 
 class Model2:
     
     ''' Implements a network-based agent-based model '''
     
-    def __init__(self, population_size, concavity, growth_rate, start_year, adaptive_sensitivity, uncertainty_para):
+    def __init__(self, population_size, concavity, growth_rate, distribution, start_year, adaptive_sensitivity, uncertainty_para):
         self.num_agents = population_size
-        self.agents = [Agent2(i, self, adaptive_sensitivity) for i in range(population_size)]
+        self.distribution = distribution
+        self.agents = [Agent2(i, self, adaptive_sensitivity, distribution) for i in range(population_size)]
         self.graph = self.create_network()
         self.growth_rate = growth_rate
         self.wealth_data = list()
@@ -50,7 +54,9 @@ class Model2:
         return G    
     
     def get_wealth_data(self):
+
         """Collect wealth data over time as plot input"""
+
         return [a.wealth for a in self.agents]
          
     def micro_state_vec_data(self):
@@ -62,7 +68,9 @@ class Model2:
         return sv_data
     
     def step(self):
+
         """Advance the model by one step"""
+
         # Randomly order agents and let them act in that order
         random_order = random.sample(self.agents, len(self.agents))
         for agent in random_order:
@@ -122,9 +130,10 @@ class Model2:
                 middle40_share_over_time,
                 bottom50_share_over_time]
         
-    def plot_wealth_groups_over_time(self, ax, period):
+    def plot_wealth_groups_over_time(self, ax, start_year, end_year):
         """
         Plot data on the given axes.
+            for period + 1 month
         """
         ### LOAD empirical monthly wealth Data
         path = ".."
@@ -135,12 +144,20 @@ class Model2:
         
         colors = ["tab:red", "tab:blue", "grey", "y"]
         wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
+        # use start and end year to determine the period length end year +1 because of python indexing and wanting to include last year
+        period_length_years = (end_year+1) - start_year
+        period_length_months = period_length_years * 12 # all months
+
+        # compute the points how to subset the data
+        first_year_available = 1976
+        start_point = (start_year - first_year_available)*12
+        end_point = ((end_year+1) - first_year_available)*12
         
         
         for i, g in enumerate(wealth_groups): 
-            x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
-            y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
-            x1 = np.linspace(1,period,period)
+            x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[start_point:end_point]
+            y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[start_point:end_point]
+            x1 = np.linspace(1,period_length_months,period_length_months)
             y1 = wealth_groups_t_data[i]
             ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
             ax.plot(x1, y1, label = g + ' model', linestyle = '-', color = colors[i])

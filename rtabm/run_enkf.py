@@ -37,10 +37,9 @@ def prepare_enkf(Model, model_params, ensemble_size, macro_state_dim, filter_fre
     enkf = EnsembleKalmanFilter(Model, filter_params, model_params, constant_a = uncertainty_obs, filter_freq = filter_freq)
     #print("EnKF micro state ensemble:\n", enkf.micro_state_ensemble)
     #print("EnKF macro state ensemble:\n", enkf.macro_state_ensemble)
-
     return enkf
 
-def run_enkf(enkf, time_horizon, filter_freq):
+def run_enkf(enkf, start_year, end_year, filter_freq):
     
     # Set a default value for filter_freq if not provided
     if filter_freq is None:
@@ -50,8 +49,9 @@ def run_enkf(enkf, time_horizon, filter_freq):
     if filter_freq == 0:
         raise ValueError("filter_freq cannot be zero.")
 
-    #time_horizon = 29*12 ## 29 years * 12 months
-    for i in tqdm(range(time_horizon), desc="Iterations ENKF Model 1"):
+    #time_horizon example +1 so last year is included from time_horizon given
+    time_horizon = ((end_year+1) - start_year)*12
+    for i in tqdm(range(time_horizon), desc="Iterations ENKF " + str(enkf.modelclass)):
     #for i in range(time_horizon):    
         #if i == 1: break
         ### set update to false or true
@@ -60,6 +60,7 @@ def run_enkf(enkf, time_horizon, filter_freq):
             #test = enkf.plot_macro_state(False)
         else:
             enkf.step(update = True)
+
 
 def plot_enkf(enkf):
     #enkf.plot_micro_state()

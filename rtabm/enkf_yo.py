@@ -44,7 +44,7 @@ class EnsembleKalmanFilter:
         - other Kalman params.                 /                                                 
         """
         
-        
+        self.modelclass = str(model)
         # Add a new instance attribute for constant 'a'
         self.constant_a = constant_a
         self.ensemble_size = None
@@ -381,7 +381,6 @@ class EnsembleKalmanFilter:
         if not isinstance(log_var, bool):
             raise TypeError
         
-            
         ## set data dimensions 
         dim = len(self.macro_state_ensemble)-1
         ####################################
@@ -691,7 +690,6 @@ class EnsembleKalmanFilter:
         
     def post_update_difference(self):
         
-        
         ### set up data collection which collects all differences between model state
         ### and the data points of the four wwealth groups post up date step
         ### we need this analysis/data in order to check whether the enkf works correctly
@@ -719,8 +717,7 @@ class EnsembleKalmanFilter:
         total_sum = sum(sum_diff_model_data_list)
         #print("this is total sum", total_sum)
         return total_sum
-                
-       
+                 
 
     def quantify_error(self, model_output, data_vector):
             
@@ -805,7 +802,11 @@ class EnsembleKalmanFilter:
         L = np.shape(self.macro_history_share[0][:,1:])[1]
         x = self.obs["date_short"][::4].reset_index(drop = True).iloc[:L]
         ### here the np.mean is again the second summation in eq. 6 and the averaging
-        ax.plot(x, np.mean(np.array(self.error_history),axis=1)[1:], label = "Model 1")
+        print("this is model class", self.modelclass)
+        if self.modelclass == "<class 'model1_class.Model1'>":
+            ax.plot(x, np.mean(np.array(self.error_history),axis=1)[1:], label = "Model 1")
+        else:
+            ax.plot(x, np.mean(np.array(self.error_history),axis=1)[1:], label = "Model 2")
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         ax.set_ylabel("error")

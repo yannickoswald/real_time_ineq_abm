@@ -14,6 +14,10 @@ from scipy.stats import powerlognorm
 from inequality_metrics import find_wealth_groups
 import pandas as pd
 
+from exponential_pareto_avg_distr import weighted_avg_exp_pareto_distr
+from exponential_pareto_avg_distr import uniform_sample
+
+
 #%%
 
 class Model1():
@@ -72,34 +76,50 @@ class Model1():
 
         
     def make_agents(self):
+
         ''' method makes agents dependent on:
-            (i) the initial distribution of wealth which is either all equal or
+            (i) the initial distribution of wealth which is either all exponential_pareto or
                 Paretolognormal
             (ii) the year that the model starts'''
+        
+        ## intialize list of agents
         agents = list()
-        for i in range(self.num_agents):
-            ### The agent parameters are: i = unique_id, self.distr, self = the economy is passed as 
-            ### a parameter to the agents, economy_beta = This is a economy wide 
-            ### scaling parameter of how power to receive more wealth scales with 
-            ### wealth itself.
-            ### set distribution from which agents' wealth is sampled initially
-            if self.distr == "all_equal":
-                a_wealth = 10000
-            elif self.distr == "Pareto_lognormal":
-                ### the scaling_coefficient is determined by fitting the wealth average
-                ### of the sample distr. to the empirical wealth average
-                if self.start_year == 2019:
+
+        if self.distr == "Pareto_lognormal":
+        
+            for i in range(self.num_agents):
+                ### The agent parameters are: i = unique_id, self.distr, self = the economy is passed as 
+                ### a parameter to the agents, economy_beta = This is a economy wide 
+                ### scaling parameter of how power to receive more wealth scales with 
+                ### wealth itself.
+                ### set distribution from which agents' wealth is sampled initially
+                if self.distr == "Pareto_lognormal":
+                    ### the scaling_coefficient is determined by fitting the wealth average
+                    ### of the sample distr. to the empirical wealth average
+                    #if self.start_year == 2019:
                     scale_coeff =  200000
                     a_wealth = powerlognorm.rvs(0.33, 1.15, size=1)*scale_coeff
-                elif self.start_year == 1990:
-                    scale_coeff = 150000
-                    a_wealth = powerlognorm.rvs(1.92, 2.08, size=1)*scale_coeff
-            else:
-                raise Exception(f"Unrecognised distribution: {self.distr}")
-            ## introduce variable q only for clarity
-            q = self.economy_beta # + np.random.normal(0, 0.1*self.economy_beta)
-             ## create agent
-            agents.append(Agent1(i, a_wealth, self, q))
+                    #elif self.start_year == 1990:
+                     #   scale_coeff = 150000
+                      #  a_wealth = powerlognorm.rvs(1.92, 2.08, size=1)*scale_coeff
+            
+                ## introduce variable q only for clarity
+                q = self.economy_beta # + np.random.normal(0, 0.1*self.economy_beta)
+                ## create agent
+                agents.append(Agent1(i, a_wealth, self, q))
+
+        elif self.distr == "exponential_pareto":
+
+            sample = uniform_sample(self.num_agents)
+            sample_of_agents = weighted_avg_exp_pareto_distr(sample, 0.4, 0.9, alpha = 1.3, Temperature = 5)
+            for i in range(self.num_agents):
+                a_wealth = sample_of_agents[i]
+                q = self.economy_beta # + np.random.normal(0, 0.1*self.economy_beta)
+                agents.append(Agent1(i, a_wealth, self, q))
+
+        else:
+            raise Exception(f"Unrecognised distribution: {self.distr}")
+        
         return agents
 
     def grow(self):
@@ -184,9 +204,10 @@ class Model1():
                 middle40_share_over_time,
                 bottom50_share_over_time]
         
-    def plot_wealth_groups_over_time(self, ax, period):
+    def plot_wealth_groups_over_time(self, ax, start_year, end_year):
         
-        ''' PLOT empirical monthly wealth Data specified period vs model output'''
+        ''' PLOT empirical monthly wealth Data specified period vs model output
+        for period + 1 month'''
         ### LOAD empirical monthly wealth Data
         path = ".."
         with open(os.path.join(path, 'data', 'wealth_data_for_import.csv')) as f:
@@ -196,14 +217,23 @@ class Model1():
         ### PLOT empirical monthly wealth Data (01/1990 to 12/2018) vs model output
         colors = ["tab:red", "tab:blue", "grey", "y"]
         wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
+        # use start and end year to determine the period length end year +1 because of python indexing and wanting to include last year
+        period_length_years = (end_year+1) - start_year 
+        period_length_months = period_length_years * 12 # all months
+
+        # compute the points how to subset the data
+        first_year_available = 1976
+        start_point = (start_year - first_year_available)*12
+        end_point = ((end_year+1) - first_year_available)*12
+
         for i, g in enumerate(wealth_groups): 
-            x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
-            y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[168:516]
-            x1 = np.linspace(1,period,period)
+            x = d1["date_short"][d1["group"] == g].reset_index(drop = True).iloc[start_point:end_point]
+            y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[start_point:end_point]
+            x1 = np.linspace(1,  period_length_months, period_length_months)
             y1 = wealth_groups_t_data[i]
             ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
             ax.plot(x1, y1, label = g + ' model', linestyle = '-', color = colors[i])
-            
+             
         x = x.reset_index(drop=True)
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)

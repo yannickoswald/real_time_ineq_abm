@@ -13,12 +13,26 @@ from inequality_metrics import find_wealth_groups2
 import numpy as np
 from scipy.stats import powerlognorm
 import pandas as pd
+from exponential_pareto_avg_distr import weighted_avg_exp_pareto_distr
+from exponential_pareto_avg_distr import map_percentiles_weights
+from exponential_pareto_avg_distr import uniform_sample
 
 class Agent2:
-    def __init__(self, id, model, adaptive_sensitivity):
+    def __init__(self, id, model, adaptive_sensitivity, distribution):
         self.id = id
-        scale_coeff = 150000
-        self.wealth = float(powerlognorm.rvs(1.92, 2.08, size=1))*scale_coeff
+
+        if distribution == "Pareto_lognormal":
+            scale_coeff = 150000
+            self.wealth = float(powerlognorm.rvs(1.92, 2.08, size=1))*scale_coeff
+
+        elif distribution == "exponential_pareto":
+            sample_uniform = float(np.random.uniform(0, 1, 1))
+            lower_bound = 0.4
+            upper_bound = 0.9
+            agent_wealth_sample = weighted_avg_exp_pareto_distr(percentiles_given = sample_uniform, lower_bound = lower_bound, upper_bound = upper_bound, alpha = 1.3, Temperature = 5)
+            self.wealth = agent_wealth_sample
+     
+    
         self.model = model
         ### variable that determines how much an agent is willing to trade/risk
         self.willingness_to_risk = random.uniform(0, 0.1)
