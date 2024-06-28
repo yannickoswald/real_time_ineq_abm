@@ -67,11 +67,13 @@ class Agent1():
        ### if the agent state is updated it can happen that the agent wealth is less than 0, 
        ### control for this otherwise the agent wealth weights do not make much sense
        ### for the selection of an agent to distribute more wealth
+
+       #print("self wealth", self.wealth, "self.beta", self.beta, "self.economy.uncertainty_para", self.economy.uncertainty_para,"self.economy.sum_power", self.economy.sum_power)
        if self.wealth > 0: 
            z = ((self.wealth**(self.beta+np.random.normal(0,  self.economy.uncertainty_para*self.beta)) / self.economy.sum_power)) 
             ## create agent
-       else: 
-           z = 0.8
+       else:   
+           z = 0
            
        ### also truncate distribution of it at 0
        self.wealth_share_power = max(0, z) 

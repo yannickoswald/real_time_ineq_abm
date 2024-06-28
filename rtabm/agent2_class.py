@@ -13,6 +13,7 @@ from inequality_metrics import find_wealth_groups2
 import numpy as np
 from scipy.stats import powerlognorm
 import pandas as pd
+import os
 from exponential_pareto_avg_distr import weighted_avg_exp_pareto_distr
 from exponential_pareto_avg_distr import map_percentiles_weights
 from exponential_pareto_avg_distr import uniform_sample
@@ -26,11 +27,32 @@ class Agent2:
             self.wealth = float(powerlognorm.rvs(1.92, 2.08, size=1))*scale_coeff
 
         elif distribution == "exponential_pareto":
+
+             # load data to find the average wealth of and scalefactor 
+            path = ".."
+            with open(os.path.join(path, 'data', 'average_wealth_for_every_year.csv')) as f:
+                 d_average = pd.read_csv(f,  encoding='utf-8-sig', sep = ",")
+
+            # Rename the column if it has unexpected characters
+            d_average.rename(columns={'ï»¿Year': 'Year'}, inplace=True)
+
+            # subset only the data where the Month is equal 1 (i.e. the first month of the year)
+            d_average = d_average[d_average["Month"] == 1]
+
+            # print head of the data
+            #print(d_average.head())
+
+            # find the average wealth for the year the model starts
+            average_wealth = d_average[d_average["Year"] == model.start_year]["Real Wealth Per Unit"].values[0]
+            # find scale factor for the year the model starts per formula derived in test calibration new weighted avg
+            scale_factor = 0.04*average_wealth ## applied equation from test_calibration_new_weighted_avg
+            #print(f"average wealth: {average_wealth}, scale factor: {scale_factor}")
+
             sample_uniform = float(np.random.uniform(0, 1, 1))
             lower_bound = 0.4
             upper_bound = 0.9
             agent_wealth_sample = weighted_avg_exp_pareto_distr(percentiles_given = sample_uniform, lower_bound = lower_bound, upper_bound = upper_bound, alpha = 1.3, Temperature = 5)
-            self.wealth = agent_wealth_sample
+            self.wealth = agent_wealth_sample * scale_factor
      
     
         self.model = model

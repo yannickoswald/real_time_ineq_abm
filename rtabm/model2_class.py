@@ -13,9 +13,7 @@ import numpy as np
 from scipy.stats import powerlognorm
 import pandas as pd
 from agent2_class import Agent2
-from exponential_pareto_avg_distr import weighted_avg_exp_pareto_distr
-from exponential_pareto_avg_distr import map_percentiles_weights
-from exponential_pareto_avg_distr import uniform_sample
+
 
 
 class Model2:
@@ -25,12 +23,12 @@ class Model2:
     def __init__(self, population_size, concavity, growth_rate, distribution, start_year, adaptive_sensitivity, uncertainty_para):
         self.num_agents = population_size
         self.distribution = distribution
+        self.start_year = start_year ## important for the exponential pareto distribution initialization
         self.agents = [Agent2(i, self, adaptive_sensitivity, distribution) for i in range(population_size)]
         self.graph = self.create_network()
         self.growth_rate = growth_rate
         self.wealth_data = list()
         self.concavity = concavity
-        self.start_year = start_year ## doesn't do anything currently
         self.time = 0
         self.macro_state = None
         self.micro_state = None
@@ -137,7 +135,7 @@ class Model2:
         """
         ### LOAD empirical monthly wealth Data
         path = ".."
-        with open(os.path.join(path, 'data', 'wealth_data_for_import.csv')) as f:
+        with open(os.path.join(path, 'data', 'wealth_data_for_import2.csv')) as f:
             d1 = pd.read_csv(f, encoding = 'unicode_escape')  
             
         wealth_groups_t_data = self.collect_wealth_data()

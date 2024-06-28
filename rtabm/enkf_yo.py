@@ -348,13 +348,15 @@ class EnsembleKalmanFilter:
         
         diff = self.data_ensemble - self.H @ self.micro_state_ensemble
         X = self.micro_state_ensemble + self.Kalman_Gain @ diff
+        print("this is X", X)
+        ### error in model 2 definitely stems from update here and is about values being smaller than 0 because it 
+        #### disappear if this is introduced
+        #### not sure that is a good solutions though
+        #X[X < 0] = 0
         Y = self.H @ X
         
         
-        ### error definitely stems from update here and is about values being smaller than 0 because it 
-        #### disappear if this is introduced
-        #### not sure that is a good solutions though
-        X[X < 0] = 0
+        
         self.micro_state_ensemble = X
         self.macro_state_ensemble = Y
        

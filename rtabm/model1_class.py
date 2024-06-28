@@ -110,10 +110,31 @@ class Model1():
 
         elif self.distr == "exponential_pareto":
 
+
+            # load data to find the average wealth of and scalefactor 
+            path = ".."
+            with open(os.path.join(path, 'data', 'average_wealth_for_every_year.csv')) as f:
+                 d_average = pd.read_csv(f,  encoding='utf-8-sig', sep = ",")
+
+            # Rename the column if it has unexpected characters
+            d_average.rename(columns={'ï»¿Year': 'Year'}, inplace=True)
+
+            # subset only the data where the Month is equal 1 (i.e. the first month of the year)
+            d_average = d_average[d_average["Month"] == 1]
+
+            # print head of the data
+            #print(d_average.head())
+
+            # find the average wealth for the year the model starts
+            average_wealth = d_average[d_average["Year"] == self.start_year]["Real Wealth Per Unit"].values[0]
+            # find scale factor for the year the model starts per formula derived in test calibration new weighted avg
+            scale_factor = 0.04*average_wealth ## applied equation from test_calibration_new_weighted_avg
+            #print(f"average wealth: {average_wealth}, scale factor: {scale_factor}")
+
             sample = uniform_sample(self.num_agents)
             sample_of_agents = weighted_avg_exp_pareto_distr(sample, 0.4, 0.9, alpha = 1.3, Temperature = 5)
             for i in range(self.num_agents):
-                a_wealth = sample_of_agents[i]
+                a_wealth = sample_of_agents[i]*scale_factor
                 q = self.economy_beta # + np.random.normal(0, 0.1*self.economy_beta)
                 agents.append(Agent1(i, a_wealth, self, q))
 
@@ -131,24 +152,32 @@ class Model1():
         self.new_wealth = self.economy_wealth - help_var
           
     def choose_agent(self):
+
         ''' This method chooses an agent based on its wealth share subject to 
             the parameter beta which is the exponent/power '''  
+        
         weights = [x.wealth_share_power for x in self.agents]
+        #print(f"sum of weights {sum(weights)}")
         self.weightshistory.append(weights)
         return random.choices(self.agents, weights, k=1)[0]
 
     def sum_of_agent_power(self):   
+
         ''' This method computes the sum of all agent wealth but subject to a "power"-parameter
         beta which then overall gives a different sum than the normal wealth. This is 
         important so that the wealth_share_power (i.e. the wealth_share with exponent beta)
-        is correctly normalized on the interval [0,1] '''
-        return sum([x.wealth**x.beta for x in self.agents])
+        is correctly normalized on the interval [0,1]. Negative wealth agents are ignored because
+        they anyway will be assigned a weight of 0 and cannot receive more wealth.'''
+
+        return sum([x.wealth**x.beta for x in self.agents if x.wealth > 0])
 
     def distribute_wealth(self):
+
         ''' This method chooses an agent each around and distributes all wealth, in n-rounds, 
         where n is the number of wealth-increments (an arbitrary number that has to be chosen
          but we usually set equal to the number of agents, so that there are as
-         many chances to get new wealth as as there are agents).'''     
+         many chances to get new wealth as as there are agents).'''    
+         
         for increment in range(self.increments):
             agent_j = self.choose_agent()
             agent_j.wealth = agent_j.wealth + (self.new_wealth / self.increments)
@@ -208,9 +237,10 @@ class Model1():
         
         ''' PLOT empirical monthly wealth Data specified period vs model output
         for period + 1 month'''
+
         ### LOAD empirical monthly wealth Data
         path = ".."
-        with open(os.path.join(path, 'data', 'wealth_data_for_import.csv')) as f:
+        with open(os.path.join(path, 'data', 'wealth_data_for_import2.csv')) as f:
             d1 = pd.read_csv(f, encoding = 'unicode_escape')
             
         wealth_groups_t_data = self.collect_wealth_data()
