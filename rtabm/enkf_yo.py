@@ -352,7 +352,7 @@ class EnsembleKalmanFilter:
         ### error in model 2 definitely stems from update here and is about values being smaller than 0 because it 
         #### disappear if this is introduced
         #### not sure that is a good solutions though
-        #X[X < 0] = 0
+        X[X < 0] = 0
         Y = self.H @ X
         
         
