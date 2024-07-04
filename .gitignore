@@ -184,3 +184,10 @@ __pycache__/
 submission1/
 submission2/
 old_code/
+
+#specific files to ignore
+economy_class_wealth2.py
+test_example_computation_ENKF.py
+run_both_models_one_time.py
+plot_FIG1.py
+wealth_distr_calibration_jupyter.ipynb
