@@ -179,3 +179,8 @@ __pycache__/
 
 #word docs
 *.docx
+
+# folders to ignore 
+submission1/
+submission2/
+old_code/
