@@ -192,4 +192,4 @@ run_both_models_one_time.py
 plot_FIG1.py
 wealth_distr_calibration_jupyter.ipynb
 wealth_distribution_parameterized.py
-run_both_models_n_times_and_compute_error.p
+run_both_models_n_times_and_compute_error.py
