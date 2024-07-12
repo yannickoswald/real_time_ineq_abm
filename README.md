@@ -42,15 +42,32 @@ Ensure you have conda installed on your machine.
 
 
 
+
 1. **Clone the repository:**
 
-
+    ```sh
+    git clone https://github.com/yannickoswald/real_time_ineq_abm.git
+    ```
 
 2. **Navigate to the repository:**
 
+    ```sh
+    cd global-convergence-incomes
+    ```
 
 3. **Run the notebooks:**
 
+    Open any of the Jupyter notebooks using Jupyter Lab or Jupyter Notebook interface.
+
+    ```sh
+    jupyter lab
+    ```
+
+    or
+
+    ```sh
+    jupyter notebook
+    ```
 
 
 **Reporting Issues**
