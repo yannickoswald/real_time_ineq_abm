@@ -26,18 +26,10 @@ All relevant output figures for this paper are produced in Jupyter notebooks. Th
 6. **experiment4_jupyter.ipynb**
 7. **experiment5_jupyter.ipynb**
 
-
-### Pre-Modelling Data Processing Notebooks
-
-1. **clean_extend_pip_data.ipynb** - Processes and extends initial data for modeling.
-
 ### Important Data files
 
-
-
-#### The original references are 
-
-
+1. **wealth_data_for_import.csv** - contains the wealth inequality data for four wealth groups as taken from https://realtimeinequality.org/
+2. **average_wealth_for_every_year** - contains the avg. wealth for every year so the correct scale factor can be chosen, applied to the exponential-pareto distribution, in order to initialise the agents with their wealth
 
 ## Getting Started
 
