@@ -311,6 +311,13 @@ class EnsembleKalmanFilter:
         else:
             C = np.cov(self.micro_state_ensemble)
         state_covariance = self.H @ C @ self.H.T
+        #eigenvalues = np.linalg.eigvals(state_covariance)
+        #if self.update_decision == True:
+         #   print("this is state_covariance", state_covariance)
+          #  print("this is data_covariance", self.data_covariance)
+           # print("Eigenvalues:", eigenvalues)
+        #max_eigenvalue = np.max(eigenvalues)
+        #scaled_covariance = state_covariance / max_eigenvalue
         diff = state_covariance + self.data_covariance
         self.Kalman_Gain = C @ self.H.T @ np.linalg.inv(diff)
         
@@ -348,7 +355,7 @@ class EnsembleKalmanFilter:
         
         diff = self.data_ensemble - self.H @ self.micro_state_ensemble
         X = self.micro_state_ensemble + self.Kalman_Gain @ diff
-        print("this is X", X)
+        #print("this is X", X)
         ### error in model 2 definitely stems from update here and is about values being smaller than 0 because it 
         #### disappear if this is introduced
         #### not sure that is a good solutions though
@@ -368,7 +375,8 @@ class EnsembleKalmanFilter:
             self.models[i].micro_state = self.micro_state_ensemble[:, i]
             self.models[i].macro_state = self.macro_state_ensemble[:, i]
             self.models[i].update_agent_states()
-            assert self.models[i].agents[0].wealth == self.micro_state_ensemble[:, i][0]
+            assert self.models[i].agents[0].wealth == self.micro_state_ensemble[:, i][0], (self.models[i].agents[0].wealth, self.micro_state_ensemble[:, i][0]) 
+
         ##### HERE EACH MODEL ECONOMY NEEDS TO UPDATE ITS OWN INTERNAL AGENT
         ##### STATES 
 
@@ -620,7 +628,7 @@ class EnsembleKalmanFilter:
             m = self.macro_history[i][:,1:]
             n = multipliers[i]
             total_wealth_ts += np.multiply(m,n)  
-            print("this is total_wealth_ts", total_wealth_ts)
+            #print("this is total_wealth_ts", total_wealth_ts)
         
         for i in range(len(multipliers)):
             m = self.macro_history[i][:,1:]

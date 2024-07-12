@@ -73,7 +73,7 @@ class Agent2:
         for neighbor in neighbors:
                 self.trade(other     = model.graph.nodes[neighbor]["agent"], 
                            concavity = model.concavity)
-        ## update wealth in line with economy wide economic growth        
+        ## update wealth in line with economy wide economic growth
         self.wealth = self.wealth * (1 + model.growth_rate)
         
 
