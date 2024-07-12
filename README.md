@@ -6,17 +6,17 @@ This repository stores all code related to the paper **An agent-based model of w
 
 All relevant output figures for this paper are produced in Jupyter notebooks. These notebooks employ the classes that represent the actual model, which are Python files.
 
-### Model Python Files
+### Model Python Files / Classes
 
-1. **country_class.py** - Defines the country-specific attributes and behaviors.
+1. **model1_class.py** - Defines model #1
+2. **model2_class.py** - Defines model #2
+3. **agent1_class** - Defines agent type 1 belonging to model #1
+4. **agent2_class** - Defines agent type 2 belonging to model #2
+5. **enkf_yo** - Defines the Ensemble Kalman Filter (ENKF) used in combination with both models
+6. **inequality_metrics** - Bundle of functions to compute the inequality measures e.g. the wealth groups aggregated from the agent-based model
+7. **exponential_pareto_avg_distr** - Functions to compute the distributional model to calibrate the agents
 
-
-### Supporting Modeling Files for Plots
-
-
-
-
-### Notebooks for Figure Outputs
+### Notebooks for running experiments and figure outputs
 
 
 
