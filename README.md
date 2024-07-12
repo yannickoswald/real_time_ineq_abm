@@ -18,13 +18,20 @@ All relevant output figures for this paper are produced in Jupyter notebooks. Th
 
 ### Notebooks for running experiments and figure outputs
 
+1. **calibration_weighted_avg.ipynb** - Calibration of agent initial distribution to empirical wealth distribution
+2. **run_both_models_n_times_and_compute_error_jupyter.ipynb** - Ensemble model runs without filter necessary for Figure 2 in the paper
+3. **experiment1_jupyter.ipynb**
+4. **experiment2_jupyter.ipynb**
+5. **experiment3_jupyter.ipynb**
+6. **experiment4_jupyter.ipynb**
+7. **experiment5_jupyter.ipynb**
 
 
 ### Pre-Modelling Data Processing Notebooks
 
 1. **clean_extend_pip_data.ipynb** - Processes and extends initial data for modeling.
 
-### Data files
+### Important Data files
 
 
 
