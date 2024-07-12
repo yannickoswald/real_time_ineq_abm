@@ -33,11 +33,10 @@ All relevant output figures for this paper are produced in Jupyter notebooks. Th
 
 ## Getting Started
 
-To get started with the code, ensure you have the necessary dependencies installed. You can set up your environment using the provided `requirements.txt` file.
+To set up the environment for this project, you can use the environment.yml file. This file contains all the necessary dependencies and configurations to get you started quickly.
 
-```sh
-pip install -r requirements.txt
-```
+Prerequisites
+Ensure you have conda installed on your machine.
 
 ## Usage
 
@@ -56,7 +55,7 @@ pip install -r requirements.txt
 
 **Reporting Issues**
 
-
+If you encounter any issues, please open an issue in the issue tracker. Provide a detailed description of the problem, including steps to reproduce the issue, and any relevant error messages or logs. This will help us address the problem more effectively.
 
 **License**
 
