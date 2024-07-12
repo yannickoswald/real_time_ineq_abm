@@ -78,8 +78,8 @@ class Model2:
         
         self.micro_state_vectors.append((self.micro_state_vec_data()))
         self.micro_state = self.micro_state_vec_data()[:,0]
-        print("this is time step", self.time)
-        print("this is the agent states in the model2", self.micro_state)
+        #print("this is time step", self.time)
+        #print("this is the agent states in the model2", self.micro_state)
         # Assert that all values are larger than 0
         #assert np.all(self.micro_state > 0), "Not all values in the array are larger than 0"
         
