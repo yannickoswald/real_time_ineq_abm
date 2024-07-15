@@ -190,6 +190,7 @@ class Model2:
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         ax.get_yaxis().set_visible(True)
         ax.set_ylim((-0.05,0.8))
+        ax.set_ylabel("wealth Share")
         ax.set_yticklabels(['0%', '0%', '20%', '40%', '60%', '80%'])
         #ax.legend(loc=(1.05, 0.45), frameon = False)
         ax.margins(0)
