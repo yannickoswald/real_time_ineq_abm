@@ -840,7 +840,7 @@ class EnsembleKalmanFilter:
         
         #if you look at figure 2 or 3 here we sum the integral under curves in panel e 
     
-        return np.sum(np.mean(np.array(self.error_history),axis = 1))
+        return np.sum(np.mean(np.array(self.error_history), axis = 1))
     
 
     def step(self, update: bool):

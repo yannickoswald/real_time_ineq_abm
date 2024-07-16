@@ -85,6 +85,8 @@ class Agent2:
         fraction = random.uniform(0, min(a*self.wealth, b*other.wealth))
         # The probability of winning is proportional to the number of links of the agent
         self_win_probability = ((self.num_links / (self.num_links + other.num_links))**concavity) + np.random.normal(0,self.model.uncertainty_para)
+        # ensure self_win_probability is between 0 and 1
+        self_win_probability = min(1, max(0, self_win_probability))
         if random.random() < self_win_probability:
             # Self wins the trade
             self.wealth += fraction
