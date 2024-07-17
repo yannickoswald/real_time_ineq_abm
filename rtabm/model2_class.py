@@ -80,8 +80,11 @@ class Model2:
         self.micro_state = self.micro_state_vec_data()[:,0]
         #print("this is time step", self.time)
         #print("this is the agent states in the model2", self.micro_state)
+        if not np.all(self.micro_state > 0):
+            print("This is the microstate of model2", self.micro_state)
+        
         # Assert that all values are larger than 0
-        #assert np.all(self.micro_state > 0), "Not all values in the array are larger than 0"
+        # assert np.all(self.micro_state > 0), "Not all values in the array are larger than 0"
         
         # set model state vector at MACRO LEVEL analogous to model 2
         wealth_list = self.get_wealth_data()

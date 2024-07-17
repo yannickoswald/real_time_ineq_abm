@@ -63,6 +63,9 @@ class EnsembleKalmanFilter:
         self.micro_history = list()
         self.error_history = list()
         
+        #record history of diff eigenvalues
+        self.eigenvalues_diff_history = list()
+        
         # Set up ensemble of models and other global properties
         self.population_size = model_params["population_size"]  
         ### set up storage for data history. Macro-history consists of 4 groups
@@ -151,6 +154,9 @@ class EnsembleKalmanFilter:
         """
         for i in range(self.ensemble_size):
             self.models[i].step()
+            ## print("Model ensemble member", i, "has stepped")
+            ## print("this is the macro state of this member", self.models[i].macro_state)
+            ## print("ths is the micro state of this member", self.models[i].micro_state)
         
     def set_current_obs(self):
         """
@@ -311,15 +317,20 @@ class EnsembleKalmanFilter:
         else:
             C = np.cov(self.micro_state_ensemble)
         state_covariance = self.H @ C @ self.H.T
-        #eigenvalues = np.linalg.eigvals(state_covariance)
+        eigenvalues_state_covariance = np.linalg.eigvals(state_covariance)
+        eigenvalues_data_covariance = np.linalg.eigvals(self.data_covariance)
         #if self.update_decision == True:
-         #   print("this is state_covariance", state_covariance)
-          #  print("this is data_covariance", self.data_covariance)
-           # print("Eigenvalues:", eigenvalues)
+           #print("this is state_covariance eigenvalues", eigenvalues_state_covariance)
+           #print("this is data_covariance eigenvalues", eigenvalues_data_covariance)
+       
         #max_eigenvalue = np.max(eigenvalues)
         #scaled_covariance = state_covariance / max_eigenvalue
         diff = state_covariance + self.data_covariance
+        if self.update_decision == True:
+            print("this is diff eigenvalues", np.linalg.eigvals(diff))
+            self.eigenvalues_diff_history.append(np.linalg.eigvals(diff))
         self.Kalman_Gain = C @ self.H.T @ np.linalg.inv(diff)
+
         
     
         '''
@@ -361,8 +372,10 @@ class EnsembleKalmanFilter:
         #### not sure that is a good solutions though
        
         Y = self.H @ X
+
+        # print("this is unaltered X", X)
         
-        X[X < 0] = 0
+        #  X[X < 0] = 0
 
         self.micro_state_ensemble = X
         self.macro_state_ensemble = Y

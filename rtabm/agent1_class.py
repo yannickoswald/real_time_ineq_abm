@@ -70,7 +70,7 @@ class Agent1():
 
        #print("self wealth", self.wealth, "self.beta", self.beta, "self.economy.uncertainty_para", self.economy.uncertainty_para,"self.economy.sum_power", self.economy.sum_power)
        if self.wealth > 0: 
-           z = ((self.wealth**(self.beta+np.random.normal(0,  self.economy.uncertainty_para*self.beta)) / self.economy.sum_power)) 
+           z = ((self.wealth**(self.beta+np.random.normal(0,  self.economy.uncertainty_para)) / self.economy.sum_power)) 
             ## create agent
        else:   
            z = 0
