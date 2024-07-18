@@ -222,16 +222,34 @@ class Model1():
     def collect_wealth_data(self):
         
         ''' Collects macro wealth data for plotting and analysis.'''
-        
-        top1_share_over_time = [x[1][0] for x in self.macro_state_vectors] 
-        top10_share_over_time = [x[1][1] for x in self.macro_state_vectors] 
-        middle40_share_over_time = [x[1][2] for x in self.macro_state_vectors] 
-        bottom50_share_over_time = [x[1][3] for x in self.macro_state_vectors] 
 
-        return [top1_share_over_time,
-                top10_share_over_time,
-                middle40_share_over_time,
-                bottom50_share_over_time]
+        print("This is the macro state vectors ", self.macro_state_vectors[0][0])
+
+        if len(self.macro_state_vectors[0][0]) == 4:
+
+            print("This is the macro state vectors length", len(self.macro_state_vectors))
+        
+            top1_share_over_time = [x[1][0] for x in self.macro_state_vectors] 
+            top10_share_over_time = [x[1][1] for x in self.macro_state_vectors] 
+            middle40_share_over_time = [x[1][2] for x in self.macro_state_vectors] 
+            bottom50_share_over_time = [x[1][3] for x in self.macro_state_vectors] 
+
+            return [top1_share_over_time,
+                    top10_share_over_time,
+                    middle40_share_over_time,
+                    bottom50_share_over_time]
+        
+        elif len(self.macro_state_vectors[0][0]) == 3:
+
+            print("This is the macro state vectors length", len(self.macro_state_vectors))
+             
+            top10_share_over_time = [x[1][0] for x in self.macro_state_vectors] 
+            middle40_share_over_time = [x[1][1] for x in self.macro_state_vectors] 
+            bottom50_share_over_time = [x[1][2] for x in self.macro_state_vectors] 
+
+            return [top10_share_over_time,
+                    middle40_share_over_time,
+                    bottom50_share_over_time]
         
     def plot_wealth_groups_over_time(self, ax, start_year, end_year):
         
@@ -244,9 +262,13 @@ class Model1():
             d1 = pd.read_csv(f, encoding = 'unicode_escape')
             
         wealth_groups_t_data = self.collect_wealth_data()
+        print("This is the wealth groups data", wealth_groups_t_data)
         ### PLOT empirical monthly wealth Data (01/1990 to 12/2018) vs model output
         colors = ["tab:red", "tab:blue", "grey", "y"]
-        wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
+        if len(wealth_groups_t_data) == 3:
+            wealth_groups = ["Top 10%", "Middle 40%", "Bottom 50%"]
+        elif len(wealth_groups_t_data) == 4:
+            wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
         # use start and end year to determine the period length end year +1 because of python indexing and wanting to include last year
         period_length_years = (end_year+1) - start_year 
         period_length_months = period_length_years * 12 # all months

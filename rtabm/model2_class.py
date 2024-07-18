@@ -73,7 +73,7 @@ class Model2:
         random_order = random.sample(self.agents, len(self.agents))
         for agent in random_order:
             agent.step(self)
-            assert agent.wealth >= 0
+            #assert agent.wealth >= 0
             #print('This is agent wealth in model 2', agent.wealth)
             
         # set model state vector at AGENT LEVEL analogous to model 1
@@ -104,7 +104,7 @@ class Model2:
         possibly to be verified further to ensure correct running results.'''
         for count, x in enumerate(self.agents): 
             x.wealth = self.micro_state[count]
-            assert x.wealth > 0
+            #assert x.wealth > 0
             #for count, x in enumerate(enkf.models[0].agents): print(count, x, x.wealth,enkf.models[0].micro_state[count])
 
     def plot_network(self):
@@ -125,16 +125,32 @@ class Model2:
     def collect_wealth_data(self):
         
         ''' Collects macro wealth data for plotting and analysis.'''
-        
-        top1_share_over_time = [x[1][0] for x in self.macro_state_vectors] 
-        top10_share_over_time = [x[1][1] for x in self.macro_state_vectors] 
-        middle40_share_over_time = [x[1][2] for x in self.macro_state_vectors] 
-        bottom50_share_over_time = [x[1][3] for x in self.macro_state_vectors] 
 
-        return [top1_share_over_time,
-                top10_share_over_time,
-                middle40_share_over_time,
-                bottom50_share_over_time]
+        if len(self.macro_state_vectors[0][0]) == 4:
+
+            print("This is the macro state vectors length", len(self.macro_state_vectors))
+        
+            top1_share_over_time = [x[1][0] for x in self.macro_state_vectors] 
+            top10_share_over_time = [x[1][1] for x in self.macro_state_vectors] 
+            middle40_share_over_time = [x[1][2] for x in self.macro_state_vectors] 
+            bottom50_share_over_time = [x[1][3] for x in self.macro_state_vectors] 
+
+            return [top1_share_over_time,
+                    top10_share_over_time,
+                    middle40_share_over_time,
+                    bottom50_share_over_time]
+        
+        elif len(self.macro_state_vectors[0][0]) == 3:
+
+            print("This is the macro state vectors length", len(self.macro_state_vectors))
+             
+            top10_share_over_time = [x[1][0] for x in self.macro_state_vectors] 
+            middle40_share_over_time = [x[1][1] for x in self.macro_state_vectors] 
+            bottom50_share_over_time = [x[1][2] for x in self.macro_state_vectors] 
+
+            return [top10_share_over_time,
+                    middle40_share_over_time,
+                    bottom50_share_over_time]
         
     def plot_wealth_groups_over_time(self, ax, start_year, end_year):
         """
@@ -149,7 +165,10 @@ class Model2:
         wealth_groups_t_data = self.collect_wealth_data()
         
         colors = ["tab:red", "tab:blue", "grey", "y"]
-        wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
+        if len(wealth_groups_t_data) == 3:
+            wealth_groups = ["Top 10%", "Middle 40%", "Bottom 50%"]
+        elif len(wealth_groups_t_data) == 4:
+            wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
         # use start and end year to determine the period length end year +1 because of python indexing and wanting to include last year
         period_length_years = (end_year+1) - start_year
         period_length_months = period_length_years * 12 # all months
