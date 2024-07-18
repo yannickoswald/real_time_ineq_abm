@@ -186,6 +186,8 @@ class EnsembleKalmanFilter:
         for i in range(self.ensemble_size):
             self.macro_state_ensemble[:, i] = self.models[i].macro_state
             self.micro_state_ensemble[:, i] = self.models[i].micro_state
+            ### print("this is the macro state of model ensemble", i,  self.macro_state_ensemble[:, i])
+            ### print("this is the micro state of model ensemble", i,  self.micro_state_ensemble[:, i])
             
     def update_state_mean(self):
         """
@@ -327,7 +329,7 @@ class EnsembleKalmanFilter:
         #scaled_covariance = state_covariance / max_eigenvalue
         diff = state_covariance + self.data_covariance
         if self.update_decision == True:
-            print("this is diff eigenvalues", np.linalg.eigvals(diff))
+            #print("this is diff eigenvalues", np.linalg.eigvals(diff))
             self.eigenvalues_diff_history.append(np.linalg.eigvals(diff))
         self.Kalman_Gain = C @ self.H.T @ np.linalg.inv(diff)
 
@@ -375,7 +377,7 @@ class EnsembleKalmanFilter:
 
         # print("this is unaltered X", X)
         
-        #  X[X < 0] = 0
+        #X[X < 0] = 0
 
         self.micro_state_ensemble = X
         self.macro_state_ensemble = Y

@@ -73,6 +73,8 @@ class Model2:
         random_order = random.sample(self.agents, len(self.agents))
         for agent in random_order:
             agent.step(self)
+            assert agent.wealth >= 0
+            #print('This is agent wealth in model 2', agent.wealth)
             
         # set model state vector at AGENT LEVEL analogous to model 1
         
@@ -80,8 +82,8 @@ class Model2:
         self.micro_state = self.micro_state_vec_data()[:,0]
         #print("this is time step", self.time)
         #print("this is the agent states in the model2", self.micro_state)
-        if not np.all(self.micro_state > 0):
-            print("This is the microstate of model2", self.micro_state)
+        #if not np.all(self.micro_state > 0):
+         #   print("This is the microstate of model2", self.micro_state)
         
         # Assert that all values are larger than 0
         # assert np.all(self.micro_state > 0), "Not all values in the array are larger than 0"
@@ -102,7 +104,7 @@ class Model2:
         possibly to be verified further to ensure correct running results.'''
         for count, x in enumerate(self.agents): 
             x.wealth = self.micro_state[count]
-            #assert x.wealth > 0
+            assert x.wealth > 0
             #for count, x in enumerate(enkf.models[0].agents): print(count, x, x.wealth,enkf.models[0].micro_state[count])
 
     def plot_network(self):

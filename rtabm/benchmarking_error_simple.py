@@ -76,7 +76,7 @@ class benchmarking_error_simple:
                               start_year=start_year,
                               uncertainty_para = 0.1)
         
-            economy2 = Model2(100,
+            economy2 = Model2(population_size=100,
                           concavity=1,
                           growth_rate = 0.025, 
                           distribution = self.distribution_model2,
@@ -93,8 +93,8 @@ class benchmarking_error_simple:
                 economy1.step()
                 economy2.step()
             fig, (ax1, ax2) = plt.subplots(1, 2,figsize=(10,4))
-            self.model1_data.append(economy1.plot_wealth_groups_over_time(ax1, end_year= end_year, start_year = start_year))
-            self.model2_data.append(economy2.plot_wealth_groups_over_time(ax2, end_year= end_year, start_year = start_year))
+            self.model1_data.append(economy1.plot_wealth_groups_over_time(ax1, end_year = end_year, start_year = start_year))
+            self.model2_data.append(economy2.plot_wealth_groups_over_time(ax2, end_year = end_year, start_year = start_year))
 
     def compute_error(self, start_year, end_year):
         
