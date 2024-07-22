@@ -70,21 +70,21 @@ class Agent2:
         # Get the neighbors of this agent
         neighbors = [n for n in model.graph.neighbors(self.id)]
         # Trade with agents that are reachable via a single intermediary
-        if self.wealth > 0:
-            for neighbor in neighbors:
-                    self.trade(other     = model.graph.nodes[neighbor]["agent"], 
-                            concavity = model.concavity)
+        # if self.wealth > 0:
+        for neighbor in neighbors:
+                self.trade(other     = model.graph.nodes[neighbor]["agent"], 
+                        concavity = model.concavity)
         ## update wealth in line with economy wide economic growth
-        if self.wealth > 0:
-            self.wealth = self.wealth * (1 + model.growth_rate)
+        # if self.wealth > 0:
+        self.wealth = self.wealth * (1 + model.growth_rate)
         
 
     def trade(self, other, concavity):
         """Perform a trade between this agent and another agent"""
 
         # trade only if both agents have positive wealth
-        if self.wealth <= 0 or other.wealth <= 0:
-            return
+        # if self.wealth <= 0 or other.wealth <= 0:
+          #   return
         
 
         # The fraction of wealth to be traded is limited to the wealth of the poorer agent
@@ -99,8 +99,8 @@ class Agent2:
             # Self wins the trade
             self.wealth += fraction
             other.wealth -= fraction
-            if other.wealth < 0:
-                other.wealth = 0
+            # if other.wealth < 0:
+              #   other.wealth = 0
             ### cap risk preferences at 10% of own wealth
             self.willingness_to_risk = min(0.1, self.willingness_to_risk*(1+self.s)) 
             other.willingness_to_risk = other.willingness_to_risk*(1-other.s)
@@ -108,8 +108,8 @@ class Agent2:
         else:
             # Other wins the trade
             self.wealth -= fraction
-            if self.wealth < 0:
-                self.wealth = 0
+            # if self.wealth < 0:
+               #  self.wealth = 0
             other.wealth += fraction
             self.willingness_to_risk = self.willingness_to_risk*(1-self.s)
             other.willingness_to_risk = min(0.1, other.willingness_to_risk*(1+other.s))

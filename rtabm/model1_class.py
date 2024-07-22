@@ -153,13 +153,14 @@ class Model1():
           
     def choose_agent(self):
 
-        ''' This method chooses an agent based on its wealth share subject to 
-            the parameter beta which is the exponent/power '''  
+        #This method chooses an agent based on its wealth share subject to 
+         #   the parameter beta which is the exponent/power 
         
         weights = [x.wealth_share_power for x in self.agents]
         #print(f"sum of weights {sum(weights)}")
         self.weightshistory.append(weights)
         return random.choices(self.agents, weights, k=1)[0]
+    
 
     def sum_of_agent_power(self):   
 

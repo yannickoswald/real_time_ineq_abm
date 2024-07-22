@@ -102,9 +102,14 @@ class EnsembleKalmanFilter:
         self.ensemble_covariance = None
         self.data_ensemble = None 
         self.data_ensemble_history = list() ### need this to track and plot observation
+        self.state_ensemble_history = list() ### need this to track and plot state ensemble
         self.data_ensemble_history_average = list() ### need this to track and plot observation mean
         self.current_obs_history = list()
         self.current_obs_var_history = list()
+        self.Kalman_Gain_history = list()
+        self.diff_history = list()
+        self.state_covariance_history = list()
+        self.state_data_covariance_history = list()
         self.data_covariance = None
         self.Kalman_Gain = None
         self.state_mean = None
@@ -290,14 +295,14 @@ class EnsembleKalmanFilter:
             
             r3 = r2 / np.sum(r2[d])
             self.data_ensemble_history_average.append(r3)
-            self.data_ensemble_history.append(self.data_ensemble)
+            #self.data_ensemble_history.append(self.data_ensemble)
         else:
             pop = np.array([0.1*p,0.4*p,0.5*p])[:, None]
             r2 = np.multiply(r,pop)
             d = np.where(r2 > 0)
             r3 = r2 / np.sum(r2[d])
             self.data_ensemble_history_average.append(r3)
-            self.data_ensemble_history.append(self.data_ensemble)
+            #self.data_ensemble_history.append(self.data_ensemble)
 
         
     def make_gain_matrix(self):
@@ -324,6 +329,9 @@ class EnsembleKalmanFilter:
         #if self.update_decision == True:
            #print("this is state_covariance eigenvalues", eigenvalues_state_covariance)
            #print("this is data_covariance eigenvalues", eigenvalues_data_covariance)
+
+
+
        
         #max_eigenvalue = np.max(eigenvalues)
         #scaled_covariance = state_covariance / max_eigenvalue
@@ -333,8 +341,9 @@ class EnsembleKalmanFilter:
             self.eigenvalues_diff_history.append(np.linalg.eigvals(diff))
         self.Kalman_Gain = C @ self.H.T @ np.linalg.inv(diff)
 
-        
-    
+   
+
+
         '''
         Keiran version original
         C = np.cov(self.state_ensemble)
@@ -377,8 +386,13 @@ class EnsembleKalmanFilter:
 
         # print("this is unaltered X", X)
         
-        #X[X < 0] = 0
+        X[X < 0] = 0
 
+        self.data_ensemble_history.append(self.data_ensemble)
+        self.state_ensemble_history.append(self.micro_state_ensemble)
+        self.diff_history.append(diff)
+        self.Kalman_Gain_history.append(self.Kalman_Gain)
+    
         self.micro_state_ensemble = X
         self.macro_state_ensemble = Y
        

@@ -73,7 +73,6 @@ class Model2:
         random_order = random.sample(self.agents, len(self.agents))
         for agent in random_order:
             agent.step(self)
-            #assert agent.wealth >= 0
             #print('This is agent wealth in model 2', agent.wealth)
             
         # set model state vector at AGENT LEVEL analogous to model 1
