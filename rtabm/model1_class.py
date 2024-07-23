@@ -13,6 +13,7 @@ from agent1_class import Agent1
 from scipy.stats import powerlognorm
 from inequality_metrics import find_wealth_groups
 import pandas as pd
+import copy
 
 from exponential_pareto_avg_distr import weighted_avg_exp_pareto_distr
 from exponential_pareto_avg_distr import uniform_sample
@@ -144,6 +145,7 @@ class Model1():
         return agents
 
     def grow(self):
+        
         ''' This method represents economic growth. One time step represents
             one month.'''
 
@@ -200,17 +202,35 @@ class Model1():
         return sv_data
     
     def step(self): 
-        self.time = self.time + 1
+
+
+        ## progress model by one time step - i.e. all its functionality
         self.sum_power = self.sum_of_agent_power()
         self.grow()
         self.distribute_wealth()
         self.determine_agent_trajectories()
-        a = find_wealth_groups(self.agents, self.economy_wealth)
-        self.macro_state_vectors.append(a)
-        self.macro_state = np.array(a[0])
+        self.recalculate_wealth_shares()
+        self.time = self.time + 1
+
+
+        #### do things that are necessary for the EnKF and track the state of the system but are not ####
+        #### part of the model itself ####
         self.micro_state_vectors.append((self.micro_state_vec_data()))
         self.micro_state = self.micro_state_vec_data()[:,0]
-        self.recalculate_wealth_shares()
+        wealth_list = self.get_wealth_data() # compute total economy wealth based on agent wealth
+        total_wealth = sum(wealth_list)
+        a = find_wealth_groups(self.agents, total_wealth)
+        ##  print("this is a model 1" , a)
+        self.macro_state_vectors.append(copy.deepcopy(a))
+        self.macro_state = np.array(a[0])
+
+        
+
+    def get_wealth_data(self):
+
+        """Collect wealth data over time as plot input"""
+
+        return [a.wealth for a in self.agents]
         
     def update_agent_states(self):
         '''update agent states after EnKF state vector update. Needs 
@@ -224,11 +244,11 @@ class Model1():
         
         ''' Collects macro wealth data for plotting and analysis.'''
 
-        print("This is the macro state vectors ", self.macro_state_vectors[0][0])
+        #print("This is the macro state vectors ", self.macro_state_vectors[0][0])
 
         if len(self.macro_state_vectors[0][0]) == 4:
 
-            print("This is the macro state vectors length", len(self.macro_state_vectors))
+            #print("This is the macro state vectors length", len(self.macro_state_vectors))
         
             top1_share_over_time = [x[1][0] for x in self.macro_state_vectors] 
             top10_share_over_time = [x[1][1] for x in self.macro_state_vectors] 
@@ -242,7 +262,7 @@ class Model1():
         
         elif len(self.macro_state_vectors[0][0]) == 3:
 
-            print("This is the macro state vectors length", len(self.macro_state_vectors))
+            #print("This is the macro state vectors length", len(self.macro_state_vectors))
              
             top10_share_over_time = [x[1][0] for x in self.macro_state_vectors] 
             middle40_share_over_time = [x[1][1] for x in self.macro_state_vectors] 
@@ -267,7 +287,7 @@ class Model1():
         ### PLOT empirical monthly wealth Data (01/1990 to 12/2018) vs model output
         colors = ["tab:red", "tab:blue", "grey", "y"]
         if len(wealth_groups_t_data) == 3:
-            wealth_groups = ["Top 10%", "Middle 40%", "Bottom 50%"]
+            wealth_groups = ["Top 10%-1%", "Middle 40%", "Bottom 50%"]
         elif len(wealth_groups_t_data) == 4:
             wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
         # use start and end year to determine the period length end year +1 because of python indexing and wanting to include last year
@@ -284,6 +304,7 @@ class Model1():
             y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[start_point:end_point]
             x1 = np.linspace(1,  period_length_months, period_length_months)
             y1 = wealth_groups_t_data[i]
+            print("This is the y1", y1)
             ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
             ax.plot(x1, y1, label = g + ' model', linestyle = '-', color = colors[i])
              
@@ -291,7 +312,7 @@ class Model1():
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         #ax1.legend(frameon = False, bbox_to_anchor=(0.45, 0.7, 1., .102))
-        ax.set_ylim((-0.05, 0.8))
+        ax.set_ylim((-0.05, 1))
         ax.set_yticklabels(['0%', '0%', '20%', '40%', '60%', '80%'])
         #ax.set_yticklabels(['0%', '0%', '10%', '20%', '30%', '40%', '50%', '60%'])
         ax.set_ylabel("wealth share")

@@ -15,6 +15,9 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 #from matplotlib.ticker import LogFormatterSciNotation
 import matplotlib.ticker as mticker
+import copy
+from inequality_metrics import find_wealth_groups2
+from inequality_metrics import find_wealth_groups
 
 
 class EnsembleKalmanFilter:
@@ -161,7 +164,7 @@ class EnsembleKalmanFilter:
             self.models[i].step()
             ## print("Model ensemble member", i, "has stepped")
             ## print("this is the macro state of this member", self.models[i].macro_state)
-            ## print("ths is the micro state of this member", self.models[i].micro_state)
+            ## print("this is the micro state of this member", i, self.models[i].micro_state)
         
     def set_current_obs(self):
         """
@@ -189,11 +192,11 @@ class EnsembleKalmanFilter:
         Which records the model state as average wealth per adult per wealth group.
         """
         for i in range(self.ensemble_size):
-            self.macro_state_ensemble[:, i] = self.models[i].macro_state
-            self.micro_state_ensemble[:, i] = self.models[i].micro_state
+            self.macro_state_ensemble[:, i] = copy.deepcopy(self.models[i].macro_state)
+            self.micro_state_ensemble[:, i] = copy.deepcopy(self.models[i].micro_state)
             ### print("this is the macro state of model ensemble", i,  self.macro_state_ensemble[:, i])
-            ### print("this is the micro state of model ensemble", i,  self.micro_state_ensemble[:, i])
-            
+        ###print("this is the micro state ensemble at time", self.time,' here are the states ', self.micro_state_ensemble)
+        
     def update_state_mean(self):
         """
         Update self.state_mean based on the current state ensemble.
@@ -323,6 +326,7 @@ class EnsembleKalmanFilter:
             C = np.cov(help_array)    
         else:
             C = np.cov(self.micro_state_ensemble)
+
         state_covariance = self.H @ C @ self.H.T
         eigenvalues_state_covariance = np.linalg.eigvals(state_covariance)
         eigenvalues_data_covariance = np.linalg.eigvals(self.data_covariance)
@@ -388,26 +392,71 @@ class EnsembleKalmanFilter:
         
         X[X < 0] = 0
 
+        
+    
+        self.micro_state_ensemble = X
+        self.macro_state_ensemble = Y
+
         self.data_ensemble_history.append(self.data_ensemble)
         self.state_ensemble_history.append(self.micro_state_ensemble)
         self.diff_history.append(diff)
         self.Kalman_Gain_history.append(self.Kalman_Gain)
-    
-        self.micro_state_ensemble = X
-        self.macro_state_ensemble = Y
        
     def update_models(self):
         """
         Update individual model states based on state ensemble.
         """
         for i in range(self.ensemble_size):
-            self.models[i].micro_state = self.micro_state_ensemble[:, i]
-            self.models[i].macro_state = self.macro_state_ensemble[:, i]
-            self.models[i].update_agent_states()
+            self.models[i].micro_state = copy.deepcopy(self.micro_state_ensemble[:, i])
+            self.models[i].macro_state = copy.deepcopy(self.macro_state_ensemble[:, i])
+            self.models[i].update_agent_states()   ##### HERE EACH MODEL ECONOMY NEEDS TO UPDATE ITS OWN INTERNAL AGENT states
             assert self.models[i].agents[0].wealth == self.micro_state_ensemble[:, i][0], (self.models[i].agents[0].wealth, self.micro_state_ensemble[:, i][0]) 
 
-        ##### HERE EACH MODEL ECONOMY NEEDS TO UPDATE ITS OWN INTERNAL AGENT
-        ##### STATES 
+        ##### HERE try to correct the order of the macro state vectors and micro state vectors
+        ##### for each model delete last element of macro state vector and micro state vector then append current one
+
+        ## print('this is the ensemble macro ', self.macro_state_ensemble)
+
+        ## control for population size
+
+        
+    
+        if self.population_size >= 100:
+            wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
+            
+            multipliers = [int(0.01*self.population_size),
+                            int(0.09*self.population_size),
+                            int(0.4*self.population_size),
+                            int(0.5*self.population_size)]
+        else:
+            wealth_groups = ["Top 10%-1%", "Middle 40%", "Bottom 50%"]
+            multipliers = [int(0.1*self.population_size),
+                                int(0.4*self.population_size),
+                                int(0.5*self.population_size)]
+
+        for i in range(self.ensemble_size):
+
+            #rint ("this is the macro state ensemble", i, self.macro_state_ensemble[:, i])
+            #print("this is the multipliers", multipliers)
+            #print("this is the product of the two", np.multiply(self.macro_state_ensemble[:, i], multipliers))
+            #print("this is the sum of the product", np.sum(np.multiply(self.macro_state_ensemble[:, i], multipliers), axis = 0))
+            
+            #### compute macro_ensemble relative shares
+            total = np.sum(np.multiply(self.macro_state_ensemble[:, i], multipliers), axis = 0)
+            wealth_shares_macro = np.multiply(self.macro_state_ensemble[:, i], multipliers) / total
+            ##print("this is wealth shares macro", wealth_shares_macro)
+            #### make nested list of self.self.macro_state_ensemble[:, i] and wealth shares macro
+            nested_list = [list(self.macro_state_ensemble[:, i]), list(wealth_shares_macro)]
+            #print("this is nested list", nested_list)
+            # delete last element of macro state vector and micro state vector
+            self.models[i].macro_state_vectors.pop(-1) 
+            # now add the new macro state and micro state to the models macro state vector and micro state vector as last element
+            self.models[i].macro_state_vectors.append(copy.deepcopy(nested_list))
+            
+            # consider micro state vectors perhaps later on
+            #self.models[i].micro_state_vectors.append(copy.deepcopy(self.micro_state_ensemble[:, i]))
+            #self.models[i].micro_state_vectors.pop(-1)
+        
 
     def plot_macro_state(self, log_var: bool):
         
@@ -573,13 +622,18 @@ class EnsembleKalmanFilter:
         plt.show()
         
     def record_history(self):
+
         ''' saves data over time '''
         
         for count, value in enumerate(self.macro_history):
+            #print("this is count", count)
+            #print("this is value", value)
             x = np.expand_dims(self.macro_state_ensemble[count,:],1)
+            #print("this is x", x)
             self.macro_history[count] = np.concatenate((value, x), axis = 1)
-        self.micro_history.append(self.micro_state_ensemble)
-        
+
+        self.micro_history.append(copy.deepcopy(self.micro_state_ensemble))
+
         
     def make_macro_history_share(self):
         
@@ -608,12 +662,13 @@ class EnsembleKalmanFilter:
     
         for i in range(len(multipliers)):
             ### here we make the total wealth calculation. ## needs to be flexible
-            ### for different size populations
+            ### for different population sizes
             m = self.macro_history[i][:,1:]
             n = multipliers[i]
             total_wealth_ts += np.multiply(m,n)  
             #print("this is total_wealth_ts", total_wealth_ts)
         
+        ### this loop then calculates the wealth share for each group
         for i in range(len(multipliers)):
             m = self.macro_history[i][:,1:]
             n = multipliers[i]
@@ -642,13 +697,15 @@ class EnsembleKalmanFilter:
                             int(0.4*self.population_size),
                             int(0.5*self.population_size)]
         else:
-            wealth_groups = ["Top 10%", "Middle 40%", "Bottom 50%"]
+            wealth_groups = ["Top 10%-1%", "Middle 40%", "Bottom 50%"]
             multipliers = [int(0.1*self.population_size),
                                 int(0.4*self.population_size),
                                 int(0.5*self.population_size)]
             
         #### compute total_wealth time series
         total_wealth_ts = np.zeros(shape=(self.ensemble_size, self.time))
+
+         #print("this is total wealth ts", total_wealth_ts)
         
     
         for i in range(len(multipliers)):
@@ -658,7 +715,9 @@ class EnsembleKalmanFilter:
             n = multipliers[i]
             total_wealth_ts += np.multiply(m,n)  
             #print("this is total_wealth_ts", total_wealth_ts)
-        
+
+         #print("this is total wealth ts after loop", total_wealth_ts)
+
         for i in range(len(multipliers)):
             m = self.macro_history[i][:,1:]
             n = multipliers[i]
@@ -667,6 +726,10 @@ class EnsembleKalmanFilter:
             A = np.divide(q, p) 
             #print('this is A', A)
             self.macro_history_share.append(A)
+
+         #print("this is the shape of macro_history_share", np.shape(self.macro_history_share))
+         #print("this is the shape of macro_history_share[0]", np.shape(self.macro_history_share[0]))
+         #print("this is macro_history_share", self.macro_history_share)
         
         #### Make 4 arrays for all time steps so far for all of the 4 wealth
         #### groups 
@@ -825,6 +888,7 @@ class EnsembleKalmanFilter:
         a3 = np.tile(a2, (multipliers.shape[0], 1))
         ### calculate wealth shares
         a4 = np.divide(a1, a3)
+        ##print("this is a4", a4)
         current_error = self.quantify_error(a4.T, share_obs)
         self.error_history.append(current_error[2])
         
@@ -835,7 +899,6 @@ class EnsembleKalmanFilter:
         ''' this function plots the error over time which is defined as the 
         difference between "ground truth" and model outputs on average 
         across all 4 wealth groups and per single wealth group'''
-        
         
         #fig, ax = plt.subplots(figsize=(10,4))
         L = np.shape(self.macro_history_share[0][:,1:])[1]
@@ -850,22 +913,8 @@ class EnsembleKalmanFilter:
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         ax.set_ylabel("error")
 
-        #my_array = np.concatenate((x, np.array(self.error_history)[1:]), axis = 1)
-        
-        # Create a new DataFrame
-        #df = pd.DataFrame({
-         #   'Date': x,
-          #  'Error': self.error_history[1:]
-        #})
-        
-        #df = pd.DataFrame(my_array)
-        
-        #df.to_csv('error_model1.csv', index=False)
-        ### save error history data
-        
-        
+
     def integral_error(self):
-        
         
         #if you look at figure 2 or 3 here we sum the integral under curves in panel e 
     
@@ -879,7 +928,6 @@ class EnsembleKalmanFilter:
         
         self.update_decision = update ## var to pass on to other methods 
         
-                             ##>>>??? for decision making
         self.predict()
         self.time = self.time + 1
         self.set_current_obs()
@@ -889,9 +937,8 @@ class EnsembleKalmanFilter:
         self.make_ensemble_covariance()
         self.make_data_covariance()
         self.make_gain_matrix()
-        self.record_history()
         self.record_error()
-        #self.record_error()
+        # EnKF update step or not decision
         if update == True: 
             self.state_update()
         #### plot of the macro_state needs to come after state_update() so that
@@ -901,4 +948,9 @@ class EnsembleKalmanFilter:
         #self.plot_fanchart()
         #if update == True: 
             self.update_models()
-            
+        # this function is supposed to correctly record the macro and micro states for each model object 
+        self.record_history()
+
+        
+
+        

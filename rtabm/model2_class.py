@@ -13,12 +13,16 @@ import numpy as np
 from scipy.stats import powerlognorm
 import pandas as pd
 from agent2_class import Agent2
+import copy
 
 
 
 class Model2:
     
-    ''' Implements a network-based agent-based model '''
+    ''' Implements a network-based agent-based model of the wealth distribution.
+        Wealth is defined as the physical and financial assets someone
+        (or society as a whole) holds and is distinct from the income 
+        or the consumption of a person.'''
     
     def __init__(self, population_size, concavity, growth_rate, distribution, start_year, adaptive_sensitivity, uncertainty_para):
         self.num_agents = population_size
@@ -68,35 +72,37 @@ class Model2:
     def step(self):
 
         """Advance the model by one step"""
-
+        
+        #### progress model by one time step - i.e. all its functionality ####
         # Randomly order agents and let them act in that order
         random_order = random.sample(self.agents, len(self.agents))
         for agent in random_order:
             agent.step(self)
             #print('This is agent wealth in model 2', agent.wealth)
-            
-        # set model state vector at AGENT LEVEL analogous to model 1
+        self.time = self.time + 1
+
+        #### do things that are necessary for the EnKF and track the state of the system but are not ####
+        ##### part of the model itself ####
         
+        # set model state vector at AGENT LEVEL analogous to model 1
         self.micro_state_vectors.append((self.micro_state_vec_data()))
         self.micro_state = self.micro_state_vec_data()[:,0]
         #print("this is time step", self.time)
         #print("this is the agent states in the model2", self.micro_state)
         #if not np.all(self.micro_state > 0):
          #   print("This is the microstate of model2", self.micro_state)
-        
         # Assert that all values are larger than 0
         # assert np.all(self.micro_state > 0), "Not all values in the array are larger than 0"
-        
         # set model state vector at MACRO LEVEL analogous to model 2
         wealth_list = self.get_wealth_data()
         total_wealth = sum(wealth_list)
         a = find_wealth_groups(self.agents, total_wealth)
-        self.macro_state_vectors.append(a)
+        # print("This is the wealth groups", a)
+        self.macro_state_vectors.append(copy.deepcopy(a))
         self.macro_state = np.array(a[0])
         
         # Collect wealth data
         self.wealth_data.append(self.get_wealth_data())
-        self.time = self.time + 1
         
     def update_agent_states(self):
         '''update agent states after EnKF state vector update. Needs 
@@ -212,7 +218,7 @@ class Model2:
         ax.set_xticks(x.iloc[0::20].index)
         ax.set_xticklabels(x.iloc[0::20], rotation = 90)
         ax.get_yaxis().set_visible(True)
-        ax.set_ylim((-0.05,0.8))
+        ax.set_ylim((-0.05,1))
         ax.set_ylabel("wealth Share")
         ax.set_yticklabels(['0%', '0%', '20%', '40%', '60%', '80%'])
         #ax.legend(loc=(1.05, 0.45), frameon = False)
@@ -226,7 +232,7 @@ class Model2:
     def write_data_for_plots(self):
         
         """
-        Collect data for ensemble plots if not used in ENKF
+        Collect data for ensemble plots if not used in EnKF
         """
         
         groups_over_time = list()
