@@ -106,6 +106,7 @@ class EnsembleKalmanFilter:
         self.data_ensemble = None 
         self.data_ensemble_history = list() ### need this to track and plot observation
         self.state_ensemble_history = list() ### need this to track and plot state ensemble
+        self.macro_state_ensemble_history = list() ### need this to track and verify macro state tracking
         self.data_ensemble_history_average = list() ### need this to track and plot observation mean
         self.current_obs_history = list()
         self.current_obs_var_history = list()
@@ -137,8 +138,8 @@ class EnsembleKalmanFilter:
         # Set negative values in 'real_wealth_per_unit' to 1
         #self.obs['real_wealth_per_unit'] = self.obs['real_wealth_per_unit'].apply(lambda x: 1 if x < 0 else x)
 
-        # Set negative values in 'real_wealth_share' to 0.005
-        #self.obs['real_wealth_share'] = self.obs['real_wealth_share'].apply(lambda x: 0.005 if x < 0 else x) 
+        # Set negative values in 'real_wealth_share' to 0.005    
+        #self.obs['real_wealth_share'] = self.obs['real_wealth_share'].clip(lower=0.005)
         
         # Update the 'variance_real_wealth' column
         self.update_variance_real_wealth(self.constant_a)
@@ -184,6 +185,7 @@ class EnsembleKalmanFilter:
             self.current_obs_var = self.obs.iloc[self.time*4-3:self.time*4, 6]
             self.current_obs_history.append(self.current_obs)
             self.current_obs_var_history.append(self.current_obs_var)
+
             
             
     def update_state_ensemble(self):
@@ -196,6 +198,8 @@ class EnsembleKalmanFilter:
             self.micro_state_ensemble[:, i] = copy.deepcopy(self.models[i].micro_state)
             ### print("this is the macro state of model ensemble", i,  self.macro_state_ensemble[:, i])
         ###print("this is the micro state ensemble at time", self.time,' here are the states ', self.micro_state_ensemble)
+
+        
         
     def update_state_mean(self):
         """
@@ -368,8 +372,8 @@ class EnsembleKalmanFilter:
         dimensional based on n-agents.
         """
         ## save previous system state estimate before updating
-        self.micro_state_ensemble_old = self.micro_state_ensemble
-        self.macro_state_ensemble_old = self.macro_state_ensemble
+        self.micro_state_ensemble_old = copy.deepcopy(self.micro_state_ensemble)
+        self.macro_state_ensemble_old = copy.deepcopy(self.macro_state_ensemble)
         
         ### start update
         #X = np.zeros(shape=(self.micro_state_vector_length, self.ensemble_size))
@@ -379,7 +383,7 @@ class EnsembleKalmanFilter:
           #  X[:, i] = self.micro_state_ensemble[:, i] + self.Kalman_Gain @ diff
            # Y[:, i] =  self.H @ X[:, i]
         
-        diff = self.data_ensemble - self.H @ self.micro_state_ensemble
+        diff = copy.deepcopy(self.data_ensemble) - self.H @ copy.deepcopy(self.micro_state_ensemble)
         X = self.micro_state_ensemble + self.Kalman_Gain @ diff
         #print("this is X", X)
         ### error in model 2 definitely stems from update here and is about values being smaller than 0 because it 
@@ -393,7 +397,6 @@ class EnsembleKalmanFilter:
         X[X < 0] = 0
 
         
-    
         self.micro_state_ensemble = X
         self.macro_state_ensemble = Y
 
@@ -418,8 +421,6 @@ class EnsembleKalmanFilter:
         ## print('this is the ensemble macro ', self.macro_state_ensemble)
 
         ## control for population size
-
-        
     
         if self.population_size >= 100:
             wealth_groups = ["Top 1%", "Top 10%-1%", "Middle 40%", "Bottom 50%"]
@@ -845,7 +846,6 @@ class EnsembleKalmanFilter:
             # Calculate absolute differences between the model output and data vector
             abs_diffs = np.abs(model_output - data_vector)
             
-            
             # sum differences across four wealth groups as in equation 6 of the paper first summation sign
             # second summation sign and average is over ensemble runs and done in compute error 
             # sum differences across four wealth groups as in equation 6 of the paper
@@ -877,6 +877,8 @@ class EnsembleKalmanFilter:
         y = np.sum(np.multiply(self.current_obs,multipliers))
         x =  np.multiply(self.current_obs,multipliers)
         share_obs = x/y
+
+        self.macro_state_ensemble_history.append(copy.deepcopy(self.macro_state_ensemble))
     
         ### MODEL TRANSFORMATION DATA 
         ### calculate total wealth over population numbers
@@ -888,8 +890,7 @@ class EnsembleKalmanFilter:
         a3 = np.tile(a2, (multipliers.shape[0], 1))
         ### calculate wealth shares
         a4 = np.divide(a1, a3)
-        ##print("this is a4", a4)
-        current_error = self.quantify_error(a4.T, share_obs)
+        current_error = self.quantify_error(a4.T, share_obs)   
         self.error_history.append(current_error[2])
         
         
@@ -899,11 +900,12 @@ class EnsembleKalmanFilter:
         ''' this function plots the error over time which is defined as the 
         difference between "ground truth" and model outputs on average 
         across all 4 wealth groups and per single wealth group'''
-        
+
+
         #fig, ax = plt.subplots(figsize=(10,4))
         L = np.shape(self.macro_history_share[0][:,1:])[1]
         x = self.obs["date_short"][::4].reset_index(drop = True).iloc[:L]
-        ### here the np.mean is again the second summation in eq. 6 and the averaging
+        ### here the np.mean is again the second summation in eq.7 and the averaging
         print("this is model class", self.modelclass)
         if self.modelclass == "<class 'model1_class.Model1'>":
             ax.plot(x, np.mean(np.array(self.error_history),axis=1)[1:], label = "Model 1")
@@ -927,7 +929,6 @@ class EnsembleKalmanFilter:
             raise TypeError
         
         self.update_decision = update ## var to pass on to other methods 
-        
         self.predict()
         self.time = self.time + 1
         self.set_current_obs()
@@ -937,7 +938,7 @@ class EnsembleKalmanFilter:
         self.make_ensemble_covariance()
         self.make_data_covariance()
         self.make_gain_matrix()
-        self.record_error()
+        
         # EnKF update step or not decision
         if update == True: 
             self.state_update()
@@ -948,9 +949,15 @@ class EnsembleKalmanFilter:
         #self.plot_fanchart()
         #if update == True: 
             self.update_models()
+            #print("this is the current observation", self.current_obs)
+            #print("this is the current macro state ensemble", self.macro_state_ensemble)
+        
+        # Error needs to be recorded after the update step decision because without update step the error is just 
+        # the difference between the model and the data and with the update step it is the difference between the EnKF-model hybrid and the data
+        self.record_error()
         # this function is supposed to correctly record the macro and micro states for each model object 
         self.record_history()
-
+       
         
 
         

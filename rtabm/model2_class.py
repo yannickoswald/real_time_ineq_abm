@@ -190,7 +190,7 @@ class Model2:
             x1 = np.linspace(1,period_length_months,period_length_months)
             y1 = wealth_groups_t_data[i]
             ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
-            ax.plot(x1, y1, label = g + ' model', linestyle = '-', color = colors[i])
+            ax.scatter(x1, y1, label = g + ' model', color = colors[i], s = 1)
         
         '''
         colors = ["tab:red", "tab:blue", "grey", "y"]

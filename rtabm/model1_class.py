@@ -304,7 +304,7 @@ class Model1():
             y = d1["real_wealth_share"][d1["group"] == g].reset_index(drop = True).iloc[start_point:end_point]
             x1 = np.linspace(1,  period_length_months, period_length_months)
             y1 = wealth_groups_t_data[i]
-            print("This is the y1", y1)
+            #print("This is the y1", y1)
             ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
             ax.plot(x1, y1, label = g + ' model', linestyle = '-', color = colors[i])
              
