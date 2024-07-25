@@ -365,8 +365,8 @@ class EnsembleKalmanFilter:
         dimensional based on n-agents.
         """
         ## save previous system state estimate before updating
-        self.micro_state_ensemble_old = copy.deepcopy(self.micro_state_ensemble)
-        self.macro_state_ensemble_old = copy.deepcopy(self.macro_state_ensemble)
+        ##self.micro_state_ensemble_old = copy.deepcopy(self.micro_state_ensemble)
+        ##self.macro_state_ensemble_old = copy.deepcopy(self.macro_state_ensemble)
         
         ### start update
         #X = np.zeros(shape=(self.micro_state_vector_length, self.ensemble_size))
@@ -387,11 +387,11 @@ class EnsembleKalmanFilter:
 
         # print("this is unaltered X", X)
         
-        X[X < 0] = 0
+        X[X <= 0] = 1
 
         
-        self.micro_state_ensemble = X
-        self.macro_state_ensemble = Y
+        self.micro_state_ensemble = copy.deepcopy(X)
+        self.macro_state_ensemble = copy.deepcopy(Y)
 
         #self.data_ensemble_history.append(self.data_ensemble)
         #self.state_ensemble_history.append(self.micro_state_ensemble)

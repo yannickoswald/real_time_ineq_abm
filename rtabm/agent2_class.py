@@ -21,6 +21,7 @@ from exponential_pareto_avg_distr import uniform_sample
 class Agent2:
     def __init__(self, id, model, adaptive_sensitivity, distribution):
         self.id = id
+        self.transaction_history = []
 
         if distribution == "Pareto_lognormal":
             scale_coeff = 150000
@@ -68,14 +69,13 @@ class Agent2:
         # Count own relationships/links
         self.num_links = self.count_links(model = self.model)
         # Get the neighbors of this agent
-        neighbors = [n for n in model.graph.neighbors(self.id)]
+        neighbors = [n for n in model.graph.neighbors(self.id) if n != self.id]
         # Trade with agents that are reachable via a single intermediary
-        # if self.wealth > 0:
         for neighbor in neighbors:
                 self.trade(other     = model.graph.nodes[neighbor]["agent"], 
                         concavity = model.concavity)
         ## update wealth in line with economy wide economic growth
-        # if self.wealth > 0:
+    
         self.wealth = self.wealth * (1 + model.growth_rate)
         
 
@@ -85,16 +85,18 @@ class Agent2:
         # trade only if both agents have positive wealth
         # if self.wealth <= 0 or other.wealth <= 0:
           #   return
-        
 
         # The fraction of wealth to be traded is limited to the wealth of the poorer agent
         a = self.willingness_to_risk
         b = other.willingness_to_risk
         fraction = random.uniform(0, min(a*self.wealth, b*other.wealth))
-        # The probability of winning is proportional to the number of links of the agent
+        # The probability of winning is proportional to the number of links of the agent compared to the other agent
         self_win_probability = ((self.num_links / (self.num_links + other.num_links))**concavity) + np.random.normal(0,self.model.uncertainty_para)
         # ensure self_win_probability is between 0 and 1
         self_win_probability = min(1, max(0, self_win_probability))
+        #print("this is a trade fraction, agent ids are, ", self.id,',', other.id, 'time is, ', self.model.time,',', 'fraction,', fraction)
+        self.transaction_history.append((self.id, other.id, self.model.time, fraction[0] if isinstance(fraction, (list, np.ndarray)) else fraction))
+
         if random.random() < self_win_probability:
             # Self wins the trade
             self.wealth += fraction

@@ -42,9 +42,9 @@ class Model2:
 
     def create_network(self):
         """Create a graph with Barabasi-Albert degree distribution and place
-        agent on this graph"""
+        agent on this graph. The richest agents are assigned to the most central nodes."""
         # Generate a network with m (desired number of edges each new node should have) = 2
-        G = nx.barabasi_albert_graph(self.num_agents, 2)
+        G = nx.barabasi_albert_graph(self.num_agents, 3)
         ### sort agents by wealth
         sorted_agents = sorted(self.agents, key=lambda agent: agent.wealth, reverse=True)
         indices_of_sorted_agents = [a.id for a in sorted_agents]
@@ -63,10 +63,10 @@ class Model2:
          
     def micro_state_vec_data(self):
         ## two rows because we have w = wealth and wealth change rate 
-        sv_data = np.zeros((self.num_agents, 1))   
+        sv_data = np.zeros((self.num_agents, 2))   
         for count, x in enumerate(self.agents): 
             sv_data[count,0] = x.wealth
-            ## sv_data[count,1] = self.growth_rate ## here growth rate in this model is a global parameter hence no x.growth_rate
+            sv_data[count,1] = x.id ## here growth rate in this model is a global parameter hence no x.growth_rate
         return sv_data
     
     def step(self):
@@ -80,8 +80,8 @@ class Model2:
             agent.step(self)
             #print('This is agent wealth in model 2', agent.wealth)
         
-        # simulate some test shocks potentially    
-        '''if self.time % 30 == 0:
+        '''# simulate some test shocks potentially    
+        if self.time % 50 == 0:
             # sort agents according to agent wealth i.e. agent.wealth
             sorted_agents = sorted(self.agents, key=lambda agent: agent.wealth, reverse=True)
             num_agents = len(sorted_agents)
@@ -89,7 +89,7 @@ class Model2:
             # the top 1% of agents lose 50% of their wealth
             top_1_percent = int(0.01 * num_agents)
             for agent in sorted_agents[:top_1_percent]:
-                agent.wealth *= 0.5
+                agent.wealth *= 0.8
 
             # the top 10% of agents lose 50% of their wealth
             top_10_percent = int(0.1 * num_agents)
@@ -100,12 +100,12 @@ class Model2:
             middle_40_percent_start = top_10_percent
             middle_40_percent_end = middle_40_percent_start + int(0.4 * num_agents)
             for agent in sorted_agents[middle_40_percent_start:middle_40_percent_end]:
-                agent.wealth *= 2
+                agent.wealth *= 1.5
 
             # the bottom 50% of agents win 100% of their wealth
             bottom_50_percent_start = middle_40_percent_end
             for agent in sorted_agents[bottom_50_percent_start:]:
-                agent.wealth *= 1
+                agent.wealth *= 0.5
         '''
         self.time = self.time + 1
 
@@ -137,6 +137,8 @@ class Model2:
         possibly to be verified further to ensure correct running results.'''
         for count, x in enumerate(self.agents): 
             x.wealth = self.micro_state[count]
+        # print list of all agent wealth states with list comprehension
+        
             #assert x.wealth > 0
             #for count, x in enumerate(enkf.models[0].agents): print(count, x, x.wealth,enkf.models[0].micro_state[count])
 
