@@ -194,7 +194,7 @@ class Model1():
             x.det_wealth_trajectory()
     
     def micro_state_vec_data(self):
-        ## two rows because we have w = wealth and wealth change rate as critical variables
+        ## two rows because we have w = wealth and wealth change rate
         sv_data = np.zeros((self.num_agents, 1))   
         for count, x in enumerate(self.agents): 
             sv_data[count,0] = x.wealth
