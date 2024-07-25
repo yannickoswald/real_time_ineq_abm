@@ -195,10 +195,10 @@ class Model1():
     
     def micro_state_vec_data(self):
         ## two rows because we have w = wealth and wealth change rate as critical variables
-        sv_data = np.zeros((self.num_agents, 2))   
+        sv_data = np.zeros((self.num_agents, 1))   
         for count, x in enumerate(self.agents): 
             sv_data[count,0] = x.wealth
-            sv_data[count,1] = x.g_rate
+            ## sv_data[count,1] = x.g_rate
         return sv_data
     
     def step(self): 

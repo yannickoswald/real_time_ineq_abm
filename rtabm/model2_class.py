@@ -63,10 +63,10 @@ class Model2:
          
     def micro_state_vec_data(self):
         ## two rows because we have w = wealth and wealth change rate as critical variables
-        sv_data = np.zeros((self.num_agents, 2))   
+        sv_data = np.zeros((self.num_agents, 1))   
         for count, x in enumerate(self.agents): 
             sv_data[count,0] = x.wealth
-            sv_data[count,1] = self.growth_rate ## here growth rate in this model is a global parameter hence no x.growth_rate
+            ## sv_data[count,1] = self.growth_rate ## here growth rate in this model is a global parameter hence no x.growth_rate
         return sv_data
     
     def step(self):
@@ -79,6 +79,34 @@ class Model2:
         for agent in random_order:
             agent.step(self)
             #print('This is agent wealth in model 2', agent.wealth)
+        
+        # simulate some test shocks potentially    
+        '''if self.time % 30 == 0:
+            # sort agents according to agent wealth i.e. agent.wealth
+            sorted_agents = sorted(self.agents, key=lambda agent: agent.wealth, reverse=True)
+            num_agents = len(sorted_agents)
+
+            # the top 1% of agents lose 50% of their wealth
+            top_1_percent = int(0.01 * num_agents)
+            for agent in sorted_agents[:top_1_percent]:
+                agent.wealth *= 0.5
+
+            # the top 10% of agents lose 50% of their wealth
+            top_10_percent = int(0.1 * num_agents)
+            for agent in sorted_agents[top_1_percent:top_10_percent]:
+                agent.wealth *= 0.5
+
+            # the middle 40% of agents win 100% of their wealth
+            middle_40_percent_start = top_10_percent
+            middle_40_percent_end = middle_40_percent_start + int(0.4 * num_agents)
+            for agent in sorted_agents[middle_40_percent_start:middle_40_percent_end]:
+                agent.wealth *= 2
+
+            # the bottom 50% of agents win 100% of their wealth
+            bottom_50_percent_start = middle_40_percent_end
+            for agent in sorted_agents[bottom_50_percent_start:]:
+                agent.wealth *= 1
+        '''
         self.time = self.time + 1
 
         #### do things that are necessary for the EnKF and track the state of the system but are not ####
@@ -133,7 +161,7 @@ class Model2:
 
         if len(self.macro_state_vectors[0][0]) == 4:
 
-            print("This is the macro state vectors length", len(self.macro_state_vectors))
+            #print("This is the macro state vectors length", len(self.macro_state_vectors))
         
             top1_share_over_time = [x[1][0] for x in self.macro_state_vectors] 
             top10_share_over_time = [x[1][1] for x in self.macro_state_vectors] 
@@ -147,7 +175,7 @@ class Model2:
         
         elif len(self.macro_state_vectors[0][0]) == 3:
 
-            print("This is the macro state vectors length", len(self.macro_state_vectors))
+            #print("This is the macro state vectors length", len(self.macro_state_vectors))
              
             top10_share_over_time = [x[1][0] for x in self.macro_state_vectors] 
             middle40_share_over_time = [x[1][1] for x in self.macro_state_vectors] 
@@ -190,7 +218,7 @@ class Model2:
             x1 = np.linspace(1,period_length_months,period_length_months)
             y1 = wealth_groups_t_data[i]
             ax.plot(x,y, label = g, color = colors[i], linestyle = '--')
-            ax.scatter(x1, y1, label = g + ' model', color = colors[i], s = 1)
+            ax.plot(x1, y1, label = g + ' model', color = colors[i], linestyle = '-')
         
         '''
         colors = ["tab:red", "tab:blue", "grey", "y"]

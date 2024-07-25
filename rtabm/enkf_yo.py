@@ -332,25 +332,18 @@ class EnsembleKalmanFilter:
             C = np.cov(self.micro_state_ensemble)
 
         state_covariance = self.H @ C @ self.H.T
-        eigenvalues_state_covariance = np.linalg.eigvals(state_covariance)
-        eigenvalues_data_covariance = np.linalg.eigvals(self.data_covariance)
+        #eigenvalues_state_covariance = np.linalg.eigvals(state_covariance)
+        #eigenvalues_data_covariance = np.linalg.eigvals(self.data_covariance)
         #if self.update_decision == True:
            #print("this is state_covariance eigenvalues", eigenvalues_state_covariance)
            #print("this is data_covariance eigenvalues", eigenvalues_data_covariance)
-
-
-
-       
         #max_eigenvalue = np.max(eigenvalues)
         #scaled_covariance = state_covariance / max_eigenvalue
         diff = state_covariance + self.data_covariance
-        if self.update_decision == True:
+        #if self.update_decision == True:
             #print("this is diff eigenvalues", np.linalg.eigvals(diff))
-            self.eigenvalues_diff_history.append(np.linalg.eigvals(diff))
+          #  self.eigenvalues_diff_history.append(np.linalg.eigvals(diff))
         self.Kalman_Gain = C @ self.H.T @ np.linalg.inv(diff)
-
-   
-
 
         '''
         Keiran version original
@@ -400,10 +393,10 @@ class EnsembleKalmanFilter:
         self.micro_state_ensemble = X
         self.macro_state_ensemble = Y
 
-        self.data_ensemble_history.append(self.data_ensemble)
-        self.state_ensemble_history.append(self.micro_state_ensemble)
-        self.diff_history.append(diff)
-        self.Kalman_Gain_history.append(self.Kalman_Gain)
+        #self.data_ensemble_history.append(self.data_ensemble)
+        #self.state_ensemble_history.append(self.micro_state_ensemble)
+        #self.diff_history.append(diff)
+        #self.Kalman_Gain_history.append(self.Kalman_Gain)
        
     def update_models(self):
         """
@@ -455,8 +448,9 @@ class EnsembleKalmanFilter:
             self.models[i].macro_state_vectors.append(copy.deepcopy(nested_list))
             
             # consider micro state vectors perhaps later on
-            #self.models[i].micro_state_vectors.append(copy.deepcopy(self.micro_state_ensemble[:, i]))
-            #self.models[i].micro_state_vectors.pop(-1)
+            self.models[i].micro_state_vectors.pop(-1)
+            self.models[i].micro_state_vectors.append(copy.deepcopy(self.micro_state_ensemble[:, i]))
+            
         
 
     def plot_macro_state(self, log_var: bool):
@@ -878,7 +872,7 @@ class EnsembleKalmanFilter:
         x =  np.multiply(self.current_obs,multipliers)
         share_obs = x/y
 
-        self.macro_state_ensemble_history.append(copy.deepcopy(self.macro_state_ensemble))
+        #self.macro_state_ensemble_history.append(copy.deepcopy(self.macro_state_ensemble))
     
         ### MODEL TRANSFORMATION DATA 
         ### calculate total wealth over population numbers
@@ -933,7 +927,7 @@ class EnsembleKalmanFilter:
         self.time = self.time + 1
         self.set_current_obs()
         self.update_state_ensemble()
-        self.update_state_mean()
+        # self.update_state_mean()
         self.update_data_ensemble()
         self.make_ensemble_covariance()
         self.make_data_covariance()
