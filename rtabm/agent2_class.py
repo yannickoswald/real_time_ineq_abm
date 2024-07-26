@@ -73,7 +73,7 @@ class Agent2:
         # Trade with agents that are reachable via a single intermediary
         for neighbor in neighbors:
                 self.trade(other     = model.graph.nodes[neighbor]["agent"], 
-                        concavity = model.concavity)
+                           concavity = model.concavity) ### concavity is a parameter that determines how much the number of links influences the probability of winning a trade
         ## update wealth in line with economy wide economic growth
     
         self.wealth = self.wealth * (1 + model.growth_rate)
@@ -84,7 +84,7 @@ class Agent2:
 
         # trade only if both agents have positive wealth
         # if self.wealth <= 0 or other.wealth <= 0:
-          #   return
+           #  return
 
         # The fraction of wealth to be traded is limited to the wealth of the poorer agent
         a = self.willingness_to_risk
@@ -96,6 +96,11 @@ class Agent2:
         self_win_probability = min(1, max(0, self_win_probability))
         #print("this is a trade fraction, agent ids are, ", self.id,',', other.id, 'time is, ', self.model.time,',', 'fraction,', fraction)
         self.transaction_history.append((self.id, other.id, self.model.time, fraction[0] if isinstance(fraction, (list, np.ndarray)) else fraction))
+
+         # Record the transaction in both agents' histories
+        transaction = (self.id, other.id, self.model.time, fraction[0] if isinstance(fraction, (list, np.ndarray)) else fraction)
+        self.transaction_history.append(transaction)
+        other.transaction_history.append(transaction)  
 
         if random.random() < self_win_probability:
             # Self wins the trade

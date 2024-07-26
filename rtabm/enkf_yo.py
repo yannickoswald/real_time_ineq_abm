@@ -427,7 +427,7 @@ class EnsembleKalmanFilter:
             multipliers = [int(0.1*self.population_size),
                                 int(0.4*self.population_size),
                                 int(0.5*self.population_size)]
-
+        
         for i in range(self.ensemble_size):
 
             #rint ("this is the macro state ensemble", i, self.macro_state_ensemble[:, i])
@@ -435,6 +435,10 @@ class EnsembleKalmanFilter:
             #print("this is the product of the two", np.multiply(self.macro_state_ensemble[:, i], multipliers))
             #print("this is the sum of the product", np.sum(np.multiply(self.macro_state_ensemble[:, i], multipliers), axis = 0))
             
+            # consider micro state vectors perhaps later on
+            self.models[i].micro_state_vectors.pop(-1)
+            self.models[i].micro_state_vectors.append(copy.deepcopy(self.micro_state_ensemble[:, i]))
+
             #### compute macro_ensemble relative shares
             total = np.sum(np.multiply(self.macro_state_ensemble[:, i], multipliers), axis = 0)
             wealth_shares_macro = np.multiply(self.macro_state_ensemble[:, i], multipliers) / total
@@ -447,10 +451,13 @@ class EnsembleKalmanFilter:
             # now add the new macro state and micro state to the models macro state vector and micro state vector as last element
             self.models[i].macro_state_vectors.append(copy.deepcopy(nested_list))
             
-            # consider micro state vectors perhaps later on
-            self.models[i].micro_state_vectors.pop(-1)
-            self.models[i].micro_state_vectors.append(copy.deepcopy(self.micro_state_ensemble[:, i]))
-            
+        # print("this is the macro state ensemble", self.macro_state_ensemble.shape)
+                
+         # Now, update macro_history
+        # for idx in range(len(self.macro_history)):
+            # self.macro_history[idx].pop(-1)
+            # self.macro_history[idx].append(copy.deepcopy(self.macro_state_ensemble[idx, :].tolist()))
+        
         
 
     def plot_macro_state(self, log_var: bool):
@@ -615,20 +622,40 @@ class EnsembleKalmanFilter:
                     linestyle = "--", ax = ax, label = "Mean of microstates")
         ax.legend(frameon = False)
         plt.show()
-        
+    '''
     def record_history(self):
-
-        ''' saves data over time '''
         
         for count, value in enumerate(self.macro_history):
-            #print("this is count", count)
-            #print("this is value", value)
-            x = np.expand_dims(self.macro_state_ensemble[count,:],1)
+
+            x = np.expand_dims(copy.deepcopy(self.macro_state_ensemble[count,:]),1)
             #print("this is x", x)
             self.macro_history[count] = np.concatenate((value, x), axis = 1)
 
+        print("this is macro history shape", self.macro_history[1].shape)
         self.micro_history.append(copy.deepcopy(self.micro_state_ensemble))
+    '''
+    def record_history(self):
 
+        '''This method records the history of the macro and micro state ensembles. 
+        Consistency with other tracking variables has to be ensured'''
+
+
+        # Ensure macro_history is initialized as a list of lists if not already
+        if not isinstance(self.macro_history, list) or not all(isinstance(e, list) for e in self.macro_history):
+            self.macro_history = [[] for _ in range(4)]  # Assuming 4 elements as per the description
+
+        for count, value in enumerate(self.macro_history):
+            x = copy.deepcopy(self.macro_state_ensemble[count, :])
+            # Append the new vector to the sublist
+            value.append(x.tolist())
+            self.macro_history[count] = value
+
+        # Print the shape of one element to verify
+        # print("this is macro history shape", len(self.macro_history[1]), len(self.macro_history[1][0]) if self.macro_history[1] else 0)
+
+        # Append a deep copy of micro_state_ensemble to micro_history
+        self.micro_history.append(copy.deepcopy(self.micro_state_ensemble))
+    
         
     def make_macro_history_share(self):
         
@@ -706,15 +733,15 @@ class EnsembleKalmanFilter:
         for i in range(len(multipliers)):
             ### here we make the total wealth calculation. ## needs to be flexible
             ### for different size populations
-            m = self.macro_history[i][:,1:]
+            m = np.array(self.macro_history[i]).T
             n = multipliers[i]
             total_wealth_ts += np.multiply(m,n)  
             #print("this is total_wealth_ts", total_wealth_ts)
 
          #print("this is total wealth ts after loop", total_wealth_ts)
-
+         
         for i in range(len(multipliers)):
-            m = self.macro_history[i][:,1:]
+            m = np.array(self.macro_history[i]).T
             n = multipliers[i]
             q = np.multiply(m, n)
             p = total_wealth_ts
@@ -783,7 +810,7 @@ class EnsembleKalmanFilter:
         #ax.legend([f'{o}' for o in legend_items],
          #         frameon = False, bbox_to_anchor = (1.25, 0.6), loc='center right')
         ax.margins(x=0)
-        
+     
         
     def post_update_difference(self):
         
@@ -929,6 +956,7 @@ class EnsembleKalmanFilter:
         self.update_state_ensemble()
         # self.update_state_mean()
         self.update_data_ensemble()
+     
         self.make_ensemble_covariance()
         self.make_data_covariance()
         self.make_gain_matrix()
@@ -936,13 +964,14 @@ class EnsembleKalmanFilter:
         # EnKF update step or not decision
         if update == True: 
             self.state_update()
+            self.update_models()
         #### plot of the macro_state needs to come after state_update() so that
         #### it either includes all 3 (previous, new, observation) state estimates   
         #### or only the non-updated plus obsverational one
         #self.plot_macro_state(log_var = False)
         #self.plot_fanchart()
         #if update == True: 
-            self.update_models()
+      
             #print("this is the current observation", self.current_obs)
             #print("this is the current macro state ensemble", self.macro_state_ensemble)
         

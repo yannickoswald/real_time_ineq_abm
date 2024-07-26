@@ -65,7 +65,7 @@ class Model2:
         ## two rows because we have w = wealth and wealth change rate 
         sv_data = np.zeros((self.num_agents, 2))   
         for count, x in enumerate(self.agents): 
-            sv_data[count,0] = x.wealth
+            sv_data[count,0] = copy.deepcopy(x.wealth)
             sv_data[count,1] = x.id ## here growth rate in this model is a global parameter hence no x.growth_rate
         return sv_data
     
@@ -114,7 +114,7 @@ class Model2:
         
         # set model state vector at AGENT LEVEL analogous to model 1
         self.micro_state_vectors.append((self.micro_state_vec_data()))
-        self.micro_state = self.micro_state_vec_data()[:,0]
+        self.micro_state = copy.deepcopy(self.micro_state_vec_data()[:,0])
         #print("this is time step", self.time)
         #print("this is the agent states in the model2", self.micro_state)
         #if not np.all(self.micro_state > 0):
@@ -127,7 +127,7 @@ class Model2:
         a = find_wealth_groups(self.agents, total_wealth)
         # print("This is the wealth groups", a)
         self.macro_state_vectors.append(copy.deepcopy(a))
-        self.macro_state = np.array(a[0])
+        self.macro_state = copy.deepcopy(np.array(a[0]))
         
         # Collect wealth data
         self.wealth_data.append(self.get_wealth_data())
@@ -136,7 +136,7 @@ class Model2:
         '''update agent states after EnKF state vector update. Needs 
         possibly to be verified further to ensure correct running results.'''
         for count, x in enumerate(self.agents): 
-            x.wealth = self.micro_state[count]
+            x.wealth = copy.deepcopy(self.micro_state[count])
         # print list of all agent wealth states with list comprehension
         
             #assert x.wealth > 0
