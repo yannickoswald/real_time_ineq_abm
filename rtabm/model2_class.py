@@ -30,7 +30,7 @@ class Model2:
         self.start_year = start_year ## important for the exponential pareto distribution initialization
         self.agents = [Agent2(i, self, adaptive_sensitivity, distribution) for i in range(population_size)]
         self.graph = self.create_network()
-        self.growth_rate = growth_rate
+        self.growth_rate = (1 + growth_rate) ** (1 / 12) - 1 # monthly growth rate from annual growth rate
         self.wealth_data = list()
         self.concavity = concavity
         self.time = 0
@@ -39,6 +39,7 @@ class Model2:
         self.macro_state_vectors = [] ### wealth group data 
         self.micro_state_vectors = [] ### system state on agent level
         self.uncertainty_para = uncertainty_para
+     
 
     def create_network(self):
         """Create a graph with Barabasi-Albert degree distribution and place
@@ -63,10 +64,10 @@ class Model2:
          
     def micro_state_vec_data(self):
         ## two rows because we have w = wealth and wealth change rate 
-        sv_data = np.zeros((self.num_agents, 2))   
+        sv_data = np.zeros((self.num_agents, 1))   
         for count, x in enumerate(self.agents): 
             sv_data[count,0] = copy.deepcopy(x.wealth)
-            sv_data[count,1] = x.id ## here growth rate in this model is a global parameter hence no x.growth_rate
+            ##sv_data[count,1] = x.id ## here growth rate in this model is a global parameter hence no x.growth_rate
         return sv_data
     
     def step(self):

@@ -385,8 +385,7 @@ class EnsembleKalmanFilter:
        
         Y = self.H @ X
 
-        # print("this is unaltered X", X)
-        
+        # control for negative values in wealth updates per adult as they make model 2 numerically instable  
         X[X <= 0] = 1
 
         
@@ -427,7 +426,7 @@ class EnsembleKalmanFilter:
             multipliers = [int(0.1*self.population_size),
                                 int(0.4*self.population_size),
                                 int(0.5*self.population_size)]
-        
+        '''
         for i in range(self.ensemble_size):
 
             #rint ("this is the macro state ensemble", i, self.macro_state_ensemble[:, i])
@@ -446,18 +445,18 @@ class EnsembleKalmanFilter:
             #### make nested list of self.self.macro_state_ensemble[:, i] and wealth shares macro
             nested_list = [list(self.macro_state_ensemble[:, i]), list(wealth_shares_macro)]
             #print("this is nested list", nested_list)
-            # delete last element of macro state vector and micro state vector
+            # delete last element of macro state vector
             self.models[i].macro_state_vectors.pop(-1) 
             # now add the new macro state and micro state to the models macro state vector and micro state vector as last element
             self.models[i].macro_state_vectors.append(copy.deepcopy(nested_list))
-            
+        
         # print("this is the macro state ensemble", self.macro_state_ensemble.shape)
                 
          # Now, update macro_history
         # for idx in range(len(self.macro_history)):
             # self.macro_history[idx].pop(-1)
             # self.macro_history[idx].append(copy.deepcopy(self.macro_state_ensemble[idx, :].tolist()))
-        
+        '''
         
 
     def plot_macro_state(self, log_var: bool):
@@ -653,8 +652,14 @@ class EnsembleKalmanFilter:
         # Print the shape of one element to verify
         # print("this is macro history shape", len(self.macro_history[1]), len(self.macro_history[1][0]) if self.macro_history[1] else 0)
 
-        # Append a deep copy of micro_state_ensemble to micro_history
-        self.micro_history.append(copy.deepcopy(self.micro_state_ensemble))
+        # Append a deep copy of micro_state_ensemble to micro_history and sort by agent wealth
+        # Sort each column of the micro_state_ensemble individually
+        sorted_micro_state_ensemble = np.sort(self.micro_state_ensemble, axis=0)
+        #print(self.micro_state_ensemble.shape)
+        #print('this is the micro ensemble', self.micro_state_ensemble) 
+        # Append the sorted copy to micro_history
+        self.micro_history.append(copy.deepcopy(sorted_micro_state_ensemble))
+    
     
         
     def make_macro_history_share(self):
@@ -684,15 +689,16 @@ class EnsembleKalmanFilter:
     
         for i in range(len(multipliers)):
             ### here we make the total wealth calculation. ## needs to be flexible
-            ### for different population sizes
-            m = self.macro_history[i][:,1:]
+            ### for different size populations
+            m = np.array(self.macro_history[i]).T
             n = multipliers[i]
             total_wealth_ts += np.multiply(m,n)  
             #print("this is total_wealth_ts", total_wealth_ts)
-        
-        ### this loop then calculates the wealth share for each group
+
+         #print("this is total wealth ts after loop", total_wealth_ts)
+         
         for i in range(len(multipliers)):
-            m = self.macro_history[i][:,1:]
+            m = np.array(self.macro_history[i]).T
             n = multipliers[i]
             q = np.multiply(m, n)
             p = total_wealth_ts

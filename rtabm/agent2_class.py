@@ -47,13 +47,14 @@ class Agent2:
             average_wealth = d_average[d_average["Year"] == model.start_year]["Real Wealth Per Unit"].values[0]
             # find scale factor for the year the model starts per formula derived in test calibration new weighted avg
             scale_factor = 0.04*average_wealth ## applied equation from test_calibration_new_weighted_avg
-            #print(f"average wealth: {average_wealth}, scale factor: {scale_factor}")
+         
 
             sample_uniform = float(np.random.uniform(0, 1, 1))
             lower_bound = 0.4
             upper_bound = 0.9
             agent_wealth_sample = weighted_avg_exp_pareto_distr(percentiles_given = sample_uniform, lower_bound = lower_bound, upper_bound = upper_bound, alpha = 1.3, Temperature = 5)
             self.wealth = agent_wealth_sample * scale_factor
+            #print(f"agent wealth: {np.log(self.wealth)}")
      
     
         self.model = model
@@ -75,8 +76,7 @@ class Agent2:
                 self.trade(other     = model.graph.nodes[neighbor]["agent"], 
                            concavity = model.concavity) ### concavity is a parameter that determines how much the number of links influences the probability of winning a trade
         ## update wealth in line with economy wide economic growth
-    
-        self.wealth = self.wealth * (1 + model.growth_rate)
+        self.wealth = self.wealth * (1 + model.growth_rate) # remember this is monthly growth rate
         
 
     def trade(self, other, concavity):
