@@ -76,6 +76,7 @@ class Agent2:
                 self.trade(other     = model.graph.nodes[neighbor]["agent"], 
                            concavity = model.concavity) ### concavity is a parameter that determines how much the number of links influences the probability of winning a trade
         ## update wealth in line with economy wide economic growth
+        #if self.wealth > 0:
         self.wealth = self.wealth * (1 + model.growth_rate) # remember this is monthly growth rate
         
 
@@ -83,8 +84,8 @@ class Agent2:
         """Perform a trade between this agent and another agent"""
 
         # trade only if both agents have positive wealth
-        # if self.wealth <= 0 or other.wealth <= 0:
-           #  return
+        #if self.wealth <= 0 or other.wealth <= 0:
+          #   return
 
         # The fraction of wealth to be traded is limited to the wealth of the poorer agent
         a = self.willingness_to_risk

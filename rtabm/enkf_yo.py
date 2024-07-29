@@ -387,6 +387,7 @@ class EnsembleKalmanFilter:
 
         # control for negative values in wealth updates per adult as they make model 2 numerically instable  
         X[X <= 0] = 1
+        # print('there is no X update')
 
         
         self.micro_state_ensemble = copy.deepcopy(X)
